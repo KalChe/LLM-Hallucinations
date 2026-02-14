@@ -25,7 +25,7 @@ class HallucinationSample:
 
 
 def load_halueval_qa(
-    data_path: Path = Path("c:/Users/cheru/Downloads/llm-hallucinations/HaluEval/data/qa_data.json"),
+    data_path: Path = None,
     n_samples: Optional[int] = None,
     seed: int = 42,
 ) -> Tuple[List[str], np.ndarray, List[str]]:
@@ -33,15 +33,18 @@ def load_halueval_qa(
     Load HaluEval QA data.
     
     Args:
-        data_path: Path to qa_data.json
-        n_samples: If set, subsample to this many total samples
-        seed: Random seed for subsampling
+        data_path: Path to qa_data.json (defaults to ../../HaluEval/data/qa_data.json)
+        n_samples: Total number of samples (half factual, half hallucinated)
+        seed: Random seed for reproducibility
     
     Returns:
         texts: List of full texts (prompt + response)
         labels: Array of labels (0=factual, 1=hallucinated)
         prompts: List of prompts only
     """
+    if data_path is None:
+        data_path = Path(__file__).parent.parent.parent / "HaluEval" / "data" / "qa_data.json"
+    
     samples = []
     with open(data_path, 'r', encoding='utf-8') as f:
         for line in f:
@@ -90,11 +93,14 @@ def load_halueval_qa(
 
 
 def load_halueval_dialogue(
-    data_path: Path = Path("c:/Users/cheru/Downloads/llm-hallucinations/HaluEval/data/dialogue_data.json"),
+    data_path: Path = None,
     n_samples: Optional[int] = None,
     seed: int = 42,
 ) -> Tuple[List[str], np.ndarray, List[str]]:
     """Load HaluEval dialogue data."""
+    if data_path is None:
+        data_path = Path(__file__).parent.parent.parent / "HaluEval" / "data" / "dialogue_data.json"
+    
     samples = []
     with open(data_path, 'r', encoding='utf-8') as f:
         for line in f:
@@ -142,11 +148,14 @@ def load_halueval_dialogue(
 
 
 def load_halueval_summarization(
-    data_path: Path = Path("c:/Users/cheru/Downloads/llm-hallucinations/HaluEval/data/summarization_data.json"),
+    data_path: Path = None,
     n_samples: Optional[int] = None,
     seed: int = 42,
 ) -> Tuple[List[str], np.ndarray, List[str]]:
     """Load HaluEval summarization data."""
+    if data_path is None:
+        data_path = Path(__file__).parent.parent.parent / "HaluEval" / "data" / "summarization_data.json"
+    
     samples = []
     with open(data_path, 'r', encoding='utf-8') as f:
         for line in f:
@@ -194,11 +203,14 @@ def load_halueval_summarization(
 
 
 def load_truthfulqa(
-    data_path: Path = Path("c:/Users/cheru/Downloads/llm-hallucinations/TruthfulQA/TruthfulQA.csv"),
+    data_path: Path = None,
     n_samples: Optional[int] = None,
     seed: int = 42,
 ) -> Tuple[List[str], np.ndarray, List[str]]:
     """Load TruthfulQA data."""
+    if data_path is None:
+        data_path = Path(__file__).parent.parent.parent / "TruthfulQA" / "TruthfulQA.csv"
+    
     import csv
     
     prompts = []
@@ -252,11 +264,13 @@ def load_truthfulqa(
 
 
 def load_halludial(
-    data_path: Path = Path("c:/Users/cheru/Downloads/llm-hallucinations/HalluDial"),
+    data_path: Path = None,
     n_samples: Optional[int] = None,
     seed: int = 42,
 ) -> Tuple[List[str], np.ndarray, List[str]]:
     """Load HalluDial dialogue hallucination data."""
+    if data_path is None:
+        data_path = Path(__file__).parent.parent.parent / "HalluDial"
     
     texts = []
     labels = []
@@ -376,7 +390,7 @@ def load_halludial(
 
 
 def load_musique(
-    data_dir: Path = Path("c:/Users/cheru/Downloads/llm-hallucinations/musique_data/data"),
+    data_dir: Path = None,
     n_samples: Optional[int] = None,
     seed: int = 42,
 ) -> Tuple[List[str], np.ndarray, List[str]]:
@@ -385,6 +399,9 @@ def load_musique(
     
     Creates hallucinated responses by providing wrong answers from other questions.
     """
+    if data_dir is None:
+        data_dir = Path(__file__).parent.parent.parent / "musique_data" / "data"
+    
     # Find available data files
     data_files = list(data_dir.glob("*.json")) + list(data_dir.glob("*.jsonl"))
     
@@ -468,7 +485,7 @@ def load_musique(
 
 
 def load_halludial(
-    data_path: Path = Path("c:/Users/cheru/Downloads/llm-hallucinations/HalluDial_data"),
+    data_path: Path = None,
     n_samples: Optional[int] = None,
     seed: int = 42,
 ) -> Tuple[List[str], np.ndarray, List[str]]:
@@ -488,6 +505,9 @@ def load_halludial(
         labels: Array of labels (0=factual, 1=hallucinated)
         prompts: List of dialogue contexts only
     """
+    if data_path is None:
+        data_path = Path(__file__).parent.parent.parent / "HalluDial_data"
+    
     import zipfile
     import os
     
@@ -614,7 +634,7 @@ def load_dataset(
     dataset_name: str,
     n_samples: Optional[int] = None,
     seed: int = 42,
-    data_dir: Path = Path("c:/Users/cheru/Downloads/llm-hallucinations"),
+    data_dir: Path = None,
 ) -> Tuple[List[str], np.ndarray, List[str]]:
     """
     Unified dataset loading interface.
@@ -628,6 +648,9 @@ def load_dataset(
     Returns:
         texts, labels, prompts
     """
+    if data_dir is None:
+        data_dir = Path(__file__).parent.parent.parent
+    
     loaders = {
         'halueval_qa': lambda: load_halueval_qa(
             data_dir / "HaluEval/data/qa_data.json", n_samples, seed

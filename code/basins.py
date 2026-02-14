@@ -39,9 +39,11 @@ plt.rcParams['xtick.labelsize'] = 9
 plt.rcParams['ytick.labelsize'] = 9
 plt.rcParams['legend.fontsize'] = 9
 
-HIDDEN_STATES_DIR = Path("C:/Users/cheru/Downloads/llm-hallucinations/ICML (editing)/figs/hidden_states")
-OUTPUT_DIR = Path("C:/Users/cheru/Downloads/llm-hallucinations/ICML (editing)/figs")
-RESULTS_DIR = Path("C:/Users/cheru/Downloads/llm-hallucinations/ICML (editing)/code/json_results")
+# Use relative paths
+BASE_DIR = Path(__file__).parent.parent.resolve()
+HIDDEN_STATES_DIR = BASE_DIR / "figs" / "hidden_states"
+OUTPUT_DIR = BASE_DIR / "figs"
+RESULTS_DIR = BASE_DIR / "code" / "json_results"
 RESULTS_DIR.mkdir(exist_ok=True, parents=True)
 
 # Models to analyze

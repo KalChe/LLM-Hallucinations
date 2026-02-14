@@ -10,8 +10,10 @@ from pathlib import Path
 from sklearn.decomposition import PCA
 from mpl_toolkits.mplot3d import Axes3D
 
-HIDDEN_STATES_DIR = Path('C:/Users/cheru/Downloads/llm-hallucinations/ICML (editing)/figs/hidden_states')
-OUTPUT_DIR = Path('C:/Users/cheru/Downloads/llm-hallucinations/ICML (editing)/figs')
+# Use relative paths
+BASE_DIR = Path(__file__).parent.parent.resolve()
+HIDDEN_STATES_DIR = BASE_DIR / "figs" / "hidden_states"
+OUTPUT_DIR = BASE_DIR / "figs"
 SEED = 42
 
 # Select representative examples

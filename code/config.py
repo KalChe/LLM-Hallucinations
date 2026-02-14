@@ -68,9 +68,9 @@ class ExperimentConfig:
     """Global experiment configuration."""
     
     # Paths
-    base_dir: Path = field(default_factory=lambda: Path("c:/Users/cheru/Downloads/llm-hallucinations/ICML (editing)"))
-    data_dir: Path = field(default_factory=lambda: Path("c:/Users/cheru/Downloads/llm-hallucinations"))
-    output_dir: Path = field(default_factory=lambda: Path("c:/Users/cheru/Downloads/llm-hallucinations/ICML (editing)/figs"))
+    base_dir: Path = field(default_factory=lambda: Path(__file__).parent.parent.resolve())
+    data_dir: Path = field(default_factory=lambda: Path(__file__).parent.parent.parent.resolve())
+    output_dir: Path = field(default_factory=lambda: Path(__file__).parent.parent.resolve() / "figs")
     
     # Data settings
     n_samples: int = 5000  # Total samples (2500 factual + 2500 hallucinated)

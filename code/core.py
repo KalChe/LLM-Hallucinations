@@ -19,7 +19,8 @@ from sklearn.metrics import roc_auc_score, precision_recall_curve, auc
 from scipy.linalg import svd
 from tqdm import tqdm
 
-WORKSPACE = Path("C:/Users/cheru/Downloads/llm-hallucinations/ICML (editing)")
+# Use relative paths
+WORKSPACE = Path(__file__).parent.parent.resolve()
 HIDDEN_STATES_DIR = WORKSPACE / "figs" / "hidden_states"
 RESULTS_FILE = WORKSPACE / "code" / "real_experiment_results.json"
 

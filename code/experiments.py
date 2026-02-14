@@ -10,9 +10,11 @@ import json
 from pathlib import Path
 from sklearn.decomposition import PCA
 
-JSON_DIR = Path('C:/Users/cheru/Downloads/llm-hallucinations/ICML (editing)/code/json_results')
-HIDDEN_STATES_DIR = Path('C:/Users/cheru/Downloads/llm-hallucinations/ICML (editing)/figs/hidden_states')
-OUTPUT_DIR = Path('C:/Users/cheru/Downloads/llm-hallucinations/ICML (editing)/figs')
+# Use relative paths
+BASE_DIR = Path(__file__).parent.parent.resolve()
+JSON_DIR = BASE_DIR / "code" / "json_results"
+HIDDEN_STATES_DIR = BASE_DIR / "figs" / "hidden_states"
+OUTPUT_DIR = BASE_DIR / "figs"
 
 JSON_DIR.mkdir(parents=True, exist_ok=True)
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
