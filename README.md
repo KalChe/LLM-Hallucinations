@@ -61,8 +61,8 @@ pip install -r code/requirements.txt
 
 Download datasets from their respective sources:
 - **HaluEval**: https://github.com/RUCAIBox/HaluEval
-- **MuSiQue**: https://github.com/StanfordNLP/MuSiQue
-- **FEVER**: https://github.com/facebookresearch/FEVER
+- **MuSiQue**: https://github.com/StonyBrookNLP/musique
+- **FEVER**: https://fever.ai/dataset/fever.html
 - **TruthfulQA**: https://github.com/sylinrl/TruthfulQA
 
 Place them in the `data/` directory following the structure expected by `code/data.py`.
