@@ -1,12 +1,4 @@
-"""
-Data loading utilities for hallucination detection experiments.
-
-Supports:
-- HaluEval (QA, dialogue, summarization)
-- MuSiQue (multi-hop reasoning)
-- HalluDial (dialogue hallucination)
-- TruthfulQA
-"""
+# data loading utilities for hallucination detection experiments
 
 import json
 from pathlib import Path
@@ -17,7 +9,7 @@ from dataclasses import dataclass
 
 @dataclass
 class HallucinationSample:
-    """A single sample with factual and hallucinated response."""
+    # a single sample with factual and hallucinated response
     prompt: str
     factual_response: str
     hallucinated_response: str
@@ -29,19 +21,7 @@ def load_halueval_qa(
     n_samples: Optional[int] = None,
     seed: int = 42,
 ) -> Tuple[List[str], np.ndarray, List[str]]:
-    """
-    Load HaluEval QA data.
-    
-    Args:
-        data_path: Path to qa_data.json (defaults to ../../HaluEval/data/qa_data.json)
-        n_samples: Total number of samples (half factual, half hallucinated)
-        seed: Random seed for reproducibility
-    
-    Returns:
-        texts: List of full texts (prompt + response)
-        labels: Array of labels (0=factual, 1=hallucinated)
-        prompts: List of prompts only
-    """
+    # load halueval qa data
     if data_path is None:
         data_path = Path(__file__).parent.parent.parent / "HaluEval" / "data" / "qa_data.json"
     
@@ -97,7 +77,7 @@ def load_halueval_dialogue(
     n_samples: Optional[int] = None,
     seed: int = 42,
 ) -> Tuple[List[str], np.ndarray, List[str]]:
-    """Load HaluEval dialogue data."""
+    # load halueval dialogue data
     if data_path is None:
         data_path = Path(__file__).parent.parent.parent / "HaluEval" / "data" / "dialogue_data.json"
     
@@ -152,7 +132,7 @@ def load_halueval_summarization(
     n_samples: Optional[int] = None,
     seed: int = 42,
 ) -> Tuple[List[str], np.ndarray, List[str]]:
-    """Load HaluEval summarization data."""
+    # load halueval summarization data
     if data_path is None:
         data_path = Path(__file__).parent.parent.parent / "HaluEval" / "data" / "summarization_data.json"
     
@@ -207,7 +187,7 @@ def load_truthfulqa(
     n_samples: Optional[int] = None,
     seed: int = 42,
 ) -> Tuple[List[str], np.ndarray, List[str]]:
-    """Load TruthfulQA data."""
+    # load truthfulqa data
     if data_path is None:
         data_path = Path(__file__).parent.parent.parent / "TruthfulQA" / "TruthfulQA.csv"
     
@@ -268,7 +248,7 @@ def load_halludial(
     n_samples: Optional[int] = None,
     seed: int = 42,
 ) -> Tuple[List[str], np.ndarray, List[str]]:
-    """Load HalluDial dialogue hallucination data."""
+    # load halludial dialogue hallucination data
     if data_path is None:
         data_path = Path(__file__).parent.parent.parent / "HalluDial"
     
@@ -394,11 +374,7 @@ def load_musique(
     n_samples: Optional[int] = None,
     seed: int = 42,
 ) -> Tuple[List[str], np.ndarray, List[str]]:
-    """
-    Load MuSiQue multi-hop QA data.
-    
-    Creates hallucinated responses by providing wrong answers from other questions.
-    """
+    # load musique multi-hop qa data
     if data_dir is None:
         data_dir = Path(__file__).parent.parent.parent / "musique_data" / "data"
     
@@ -489,22 +465,7 @@ def load_halludial(
     n_samples: Optional[int] = None,
     seed: int = 42,
 ) -> Tuple[List[str], np.ndarray, List[str]]:
-    """
-    Load HalluDial dataset (conversational hallucination).
-    
-    HalluDial contains multi-turn dialogues with hallucinated responses.
-    Unlike HaluEval, this is focused on conversational contexts.
-    
-    Args:
-        data_path: Path to HalluDial directory (may contain zipped files)
-        n_samples: If set, subsample to this many total samples
-        seed: Random seed for subsampling
-    
-    Returns:
-        texts: List of full texts (dialogue context + response)
-        labels: Array of labels (0=factual, 1=hallucinated)
-        prompts: List of dialogue contexts only
-    """
+    # load halludial dataset (conversational hallucination)
     if data_path is None:
         data_path = Path(__file__).parent.parent.parent / "HalluDial_data"
     
@@ -636,18 +597,7 @@ def load_dataset(
     seed: int = 42,
     data_dir: Path = None,
 ) -> Tuple[List[str], np.ndarray, List[str]]:
-    """
-    Unified dataset loading interface.
-    
-    Args:
-        dataset_name: One of 'halueval_qa', 'halueval_dialogue', 'halueval_summarization', 'musique'
-        n_samples: Total number of samples (half factual, half hallucinated)
-        seed: Random seed
-        data_dir: Base directory containing datasets
-    
-    Returns:
-        texts, labels, prompts
-    """
+    # unified dataset loading interface
     if data_dir is None:
         data_dir = Path(__file__).parent.parent.parent
     
@@ -685,12 +635,7 @@ def train_test_split_data(
     test_size: float = 0.3,
     seed: int = 42,
 ) -> Tuple[List[str], List[str], np.ndarray, np.ndarray, List[str], List[str]]:
-    """
-    Split data into train and test sets, stratified by label.
-    
-    Returns:
-        train_texts, test_texts, train_labels, test_labels, train_prompts, test_prompts
-    """
+    # split data into train and test sets, stratified by label
     np.random.seed(seed)
     
     n = len(texts)

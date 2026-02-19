@@ -1,17 +1,4 @@
-"""
-Geometric metrics for hallucination basin analysis.
-
-Implements:
-- Basin center computation (reference states)
-- Distance to basin center (d_basin)
-- Fisher separation ratio (rho_Fisher)
-- Residual flow magnitude (sigma_flow)
-- Mahalanobis distance with Ledoit-Wolf shrinkage
-- Effective dimensionality estimation
-- Effective Rank (r_eff) for manifold collapse detection
-- Flow Magnitude for reasoning collapse detection
-- Unified Risk Score combining all collapse types
-"""
+# geometric metrics for hallucination basin analysis
 
 import numpy as np
 from typing import Dict, List, Tuple, Optional
@@ -24,7 +11,7 @@ from scipy.linalg import svdvals
 
 @dataclass
 class BasinGeometry:
-    """Computed basin geometry for a single layer."""
+    # computed basin geometry for a single layer
     layer_idx: int
     mu_factual: np.ndarray
     mu_hallucinated: np.ndarray
@@ -45,16 +32,7 @@ class BasinGeometry:
 
 
 def compute_effective_dimensionality(X: np.ndarray, method: str = 'participation_ratio') -> float:
-    """
-    Compute effective dimensionality of data distribution.
-    
-    Args:
-        X: Data matrix (n_samples, n_features)
-        method: 'participation_ratio' or 'eigenvalue_decay'
-    
-    Returns:
-        Effective dimensionality estimate
-    """
+    # compute effective dimensionality of data distribution
     if X.shape[0] < 2:
         return 0.0
     
@@ -89,20 +67,7 @@ def compute_effective_dimensionality(X: np.ndarray, method: str = 'participation
 
 
 def compute_effective_rank(X: np.ndarray, epsilon: float = 1e-10) -> float:
-    """
-    Compute effective rank via entropy of singular values (manifold collapse metric).
-    
-    Formula: r_eff = exp(H(λ)), where H(λ) = -Σ p_i log(p_i), p_i = λ_i / Σλ_j
-    
-    Low effective rank indicates manifold collapse (Type 2: Manifold Trapping).
-    
-    Args:
-        X: Data matrix (n_samples, n_features)
-        epsilon: Small constant to avoid log(0)
-    
-    Returns:
-        Effective rank (1 to min(n_samples, n_features))
-    """
+    # compute effective rank via entropy of singular values (manifold collapse metric)
     if X.shape[0] < 2:
         return 1.0
     
@@ -144,20 +109,7 @@ def compute_layer_flow_magnitude(
     hidden_states_current: np.ndarray,
     hidden_states_previous: np.ndarray
 ) -> float:
-    """
-    Compute flow magnitude between consecutive layers (reasoning collapse metric).
-    
-    Formula: σ_flow = mean(||h^(l) - h^(l-1)||_2)
-    
-    Low flow magnitude in early layers indicates Flow Stagnation (Type 3).
-    
-    Args:
-        hidden_states_current: Current layer states (n_samples, hidden_dim)
-        hidden_states_previous: Previous layer states (n_samples, hidden_dim)
-    
-    Returns:
-        Mean L2 norm of layer differences
-    """
+    # compute flow magnitude between consecutive layers (reasoning collapse metric)
     if hidden_states_current.shape != hidden_states_previous.shape:
         return 0.0
     
@@ -179,27 +131,7 @@ def compute_unified_risk_score(
     basin_threshold: float = 0.5,
     flow_scale: float = 1.0
 ) -> float:
-    """
-    Compute unified risk score combining all three collapse types.
-    
-    Formula: Risk = max(d_basin/threshold, 1 - r_eff/D, exp(-σ_flow/scale))
-    
-    This detects:
-    - Type 1 (Basin): High risk when close to basin (low distance)
-    - Type 2 (Manifold): High risk when low effective rank
-    - Type 3 (Flow): High risk when flow magnitude is low
-    
-    Args:
-        distance_to_basin: Distance to hallucination basin center
-        effective_rank: Effective rank of hidden states
-        flow_magnitude: Flow magnitude from previous layer
-        hidden_dim: Full dimensionality D
-        basin_threshold: Distance threshold for basin attraction
-        flow_scale: Scale parameter for flow term
-    
-    Returns:
-        Unified risk score in [0, 1], higher = more likely to be hallucination
-    """
+    # compute unified risk score combining all three collapse types
     # Type 1: Basin Attraction (inverted - closer = higher risk)
     basin_risk = 1.0 - min(distance_to_basin / basin_threshold, 1.0)
     
@@ -219,13 +151,7 @@ def compute_fisher_ratio(
     factual_states: np.ndarray,
     hallucinated_states: np.ndarray,
 ) -> float:
-    """
-    Compute Fisher discriminant ratio.
-    
-    Fisher ratio = ||mu_f - mu_h||^2 / (trace(Sigma_f) + trace(Sigma_h))
-    
-    High values indicate good linear separability.
-    """
+    # compute fisher discriminant ratio
     if factual_states.shape[0] < 2 or hallucinated_states.shape[0] < 2:
         return 0.0
     
@@ -249,18 +175,7 @@ def compute_mahalanobis_distance(
     hallucinated_states: np.ndarray,
     apply_correction: bool = True,
 ) -> Tuple[float, float, float, float]:
-    """
-    Compute regularized Mahalanobis distance between class centers.
-    
-    Uses Ledoit-Wolf shrinkage for robust covariance estimation
-    in high-dimensional settings.
-    
-    Returns:
-        delta_sq: Squared Mahalanobis distance
-        delta_corrected: Finite-sample corrected distance
-        risk_prob: Hallucination risk probability P(error) = Phi(-delta/2)
-        shrinkage: Ledoit-Wolf shrinkage parameter
-    """
+    # compute regularized mahalanobis distance between class centers
     mu_f = factual_states.mean(axis=0)
     mu_h = hallucinated_states.mean(axis=0)
     delta_mu = mu_f - mu_h
@@ -304,17 +219,7 @@ def compute_basin_geometry(
     labels: np.ndarray,
     verbose: bool = True,
 ) -> Dict[int, BasinGeometry]:
-    """
-    Compute full basin geometry for each layer.
-    
-    Args:
-        hidden_states: Dict mapping layer_idx -> hidden states array (n_samples, hidden_dim)
-        labels: Array of labels (0=factual, 1=hallucinated)
-        verbose: Print progress
-    
-    Returns:
-        Dict mapping layer_idx -> BasinGeometry
-    """
+    # compute full basin geometry for each layer
     results = {}
     
     factual_mask = labels == 0
@@ -396,22 +301,7 @@ def compute_geometric_features(
     basin_geometry: Dict[int, BasinGeometry],
     aggregate: str = 'mean',
 ) -> np.ndarray:
-    """
-    Compute geometric feature vectors for detection.
-    
-    Features per layer:
-    - d_basin: Distance to hallucination basin center
-    - rho_fisher: Fisher ratio (global for layer)
-    - sigma_flow: Residual flow magnitude
-    
-    Args:
-        hidden_states: Hidden states per layer
-        basin_geometry: Pre-computed basin geometry
-        aggregate: How to aggregate across layers ('mean', 'concat', 'last')
-    
-    Returns:
-        Feature array (n_samples, n_features)
-    """
+    # compute geometric feature vectors for detection
     layers = sorted(hidden_states.keys())
     n_samples = hidden_states[layers[0]].shape[0]
     
@@ -465,13 +355,7 @@ def compute_spectral_radius(
     epsilon: float = 1e-4,
     n_samples: int = 100,
 ) -> float:
-    """
-    Estimate spectral radius of Jacobian at reference state.
-    
-    Uses power iteration on finite-difference Jacobian approximation.
-    
-    This validates Proposition 5.1: ρ(J_ℓ(μ^(ℓ))) < 1 for stability.
-    """
+    # estimate spectral radius of jacobian at reference state
     import torch
     
     d = len(reference_state)
@@ -497,18 +381,14 @@ def compute_spectral_radius(
 
 
 class GeometricRiskScorer:
-    """
-    Compute geometric risk scores for hallucination detection.
-    
-    Combines multiple geometric metrics into a single risk score.
-    """
+    # compute geometric risk scores for hallucination detection
     
     def __init__(self, basin_geometry: Dict[int, BasinGeometry]):
         self.basin_geometry = basin_geometry
         self.weights = None
         
     def fit(self, features: np.ndarray, labels: np.ndarray):
-        """Learn optimal weights via logistic regression."""
+        # learn optimal weights via logistic regression
         from sklearn.linear_model import LogisticRegression
         
         clf = LogisticRegression(max_iter=1000, random_state=42)
@@ -521,14 +401,14 @@ class GeometricRiskScorer:
         return self
     
     def predict_risk(self, features: np.ndarray) -> np.ndarray:
-        """Predict hallucination risk probability."""
+        # predict hallucination risk probability
         if self.weights is None:
             raise ValueError("Must call fit() first")
         
         return self.clf.predict_proba(features)[:, 1]
     
     def get_decision_boundary(self) -> Dict:
-        """Return decision boundary parameters."""
+        # return decision boundary parameters
         return {
             'weights': self.weights.tolist(),
             'bias': float(self.bias),

@@ -1,7 +1,4 @@
-"""
-Generate layer-wise PCA evolution figures showing how basins form over time.
-Creates small multiples visualization in 2D and 3D for all model-dataset pairs.
-"""
+# generate layer-wise pca evolution figures showing how basins form over time
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -26,7 +23,7 @@ EXAMPLES = [
 
 
 def visualize_layer_evolution_2d(filename, title):
-    """Generate 2D PCA evolution across layers"""
+    # generate 2d pca evolution across layers
     filepath = HIDDEN_STATES_DIR / filename
     if not filepath.exists():
         print(f"Skipping {filename} (not found)")
@@ -111,7 +108,7 @@ def visualize_layer_evolution_2d(filename, title):
 
 
 def visualize_layer_evolution_3d(filename, title):
-    """Generate 3D PCA evolution across layers"""
+    # generate 3d pca evolution across layers
     filepath = HIDDEN_STATES_DIR / filename
     if not filepath.exists():
         print(f"Skipping {filename} (not found)")
@@ -184,7 +181,7 @@ def visualize_layer_evolution_3d(filename, title):
 
 
 def generate_all_evolution_figures():
-    """Generate all layer evolution figures"""
+    # generate all layer evolution figures
     print("="*60)
     print("GENERATING LAYER-WISE PCA EVOLUTION FIGURES")
     print("="*60)

@@ -1,17 +1,4 @@
-"""
-Multi-Basin Clustering: Empirical Validation of Theorem 5.X
-
-Implements Algorithm 2 (Multi-Basin Detection) to identify K+1 competing misconception
-basins in TruthfulQA dataset. Validates Voronoi partitioning hypothesis.
-
-Expected findings:
-- K ≈ 5-10 distinct misconception clusters
-- Clean Voronoi cell boundaries
-- Multi-class classification superior to binary
-
-Run time: ~30 min for all models on TruthfulQA
-Output: Clustering visualization + misconception taxonomy
-"""
+# multi-basin clustering for empirical validation of theorem 5.x
 
 import numpy as np
 import torch
@@ -61,7 +48,7 @@ SEED = 42
 
 
 def load_hidden_states(model_name: str, dataset_name: str = DATASET) -> Tuple:
-    """Load hidden states for middle layer."""
+    # load hidden states for middle layer
     hidden_file = HIDDEN_STATES_DIR / f"{model_name}_{dataset_name}_hidden_states.npz"
     
     if not hidden_file.exists():
@@ -80,7 +67,7 @@ def load_hidden_states(model_name: str, dataset_name: str = DATASET) -> Tuple:
 
 
 def find_optimal_k(h_hall: np.ndarray, k_values: List[int]) -> Tuple[int, Dict]:
-    """Find optimal number of clusters using silhouette score and elbow method."""
+    # find optimal number of clusters using silhouette score and elbow method
     
     scores = {}
     for k in k_values:
@@ -106,19 +93,7 @@ def find_optimal_k(h_hall: np.ndarray, k_values: List[int]) -> Tuple[int, Dict]:
 
 
 def multi_basin_detection(h_train: np.ndarray, labels_train: np.ndarray, k: int) -> Tuple:
-    """
-    Algorithm 2: Multi-Basin Detection
-    
-    Input:
-        h_train: Hidden states (n_samples, hidden_dim)
-        labels_train: Binary labels (0=factual, 1=hallucination)
-        k: Number of hallucination clusters
-    
-    Output:
-        μ_0: Reference (factual) centroid
-        {μ_1, ..., μ_k}: Misconception centroids
-        cluster_assignments: Cluster ID for each hallucination sample
-    """
+    # algorithm 2: multi-basin detection
     # Step 1: Compute reference centroid μ_0
     mu_ref = h_train[labels_train == 0].mean(axis=0)
     
@@ -141,11 +116,7 @@ def evaluate_multi_class_detection(
     mu_ref: np.ndarray,
     mu_misconceptions: np.ndarray
 ) -> Dict:
-    """
-    Evaluate multi-class classification: Reference (0) vs. K misconceptions (1...K)
-    
-    Compare to binary classification (Reference vs. All-Hallucinations)
-    """
+    # evaluate multi-class classification: reference (0) vs. k misconceptions (1...k)
     k = len(mu_misconceptions)
     
     # Assign test samples to nearest centroid (Voronoi cells)
@@ -196,7 +167,7 @@ def visualize_voronoi_cells(
     model_name: str,
     output_file: Path
 ):
-    """Visualize Voronoi partitioning in 2D PCA space."""
+    # visualize voronoi partitioning in 2d pca space
     
     k = len(mu_misconceptions)
     
@@ -264,7 +235,7 @@ def visualize_voronoi_cells(
 
 
 def run_multi_basin_analysis(model_name: str) -> Dict:
-    """Run full multi-basin analysis for a single model."""
+    # run full multi-basin analysis for a single model
     
     print(f"\n{'='*60}")
     print(f"Multi-Basin Analysis: {model_name}")
@@ -361,7 +332,7 @@ def run_multi_basin_analysis(model_name: str) -> Dict:
 
 
 def create_summary_figure(all_results: List[Dict], output_file: Path):
-    """Create summary figure showing optimal K and performance across models."""
+    # create summary figure showing optimal k and performance across models
     
     fig, axes = plt.subplots(1, 2, figsize=(10, 4))
     
@@ -395,7 +366,7 @@ def create_summary_figure(all_results: List[Dict], output_file: Path):
 
 
 def main():
-    """Run multi-basin analysis for all models."""
+    # run multi-basin analysis for all models
     
     print("="*60)
     print("MULTI-BASIN CLUSTERING (Theorem 5.X Validation)")

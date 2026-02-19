@@ -1,16 +1,4 @@
-"""
-Rigorous Causality Controls for Basin Intervention
-
-Implements 3 control conditions to validate that basin direction (not just distance)
-causally drives hallucination probability:
-
-1. Random Direction Baseline: Move h_fact in random directions → should show <5× increase
-2. Orthogonal Projection Control: Move orthogonal to basin direction → should show no effect
-3. Dose-Response Curve: Vary magnitude along basin direction → should show monotonic increase
-
-Run time: ~30 min for all model-dataset pairs
-Output: JSON results + comparative figures
-"""
+# rigorous causality controls for basin intervention
 
 import numpy as np
 import os
@@ -67,7 +55,7 @@ SEED = 42
 
 
 def load_hidden_states_and_split(model_name: str, dataset_name: str) -> Tuple:
-    """Load hidden states and create train/test split."""
+    # load hidden states and create train/test split
     hidden_file = HIDDEN_STATES_DIR / f"{model_name}_{dataset_name}_hidden_states.npz"
     
     if not hidden_file.exists():
@@ -104,7 +92,7 @@ def load_hidden_states_and_split(model_name: str, dataset_name: str) -> Tuple:
 
 
 def train_classifier(h_train: np.ndarray, labels_train: np.ndarray) -> LogisticRegression:
-    """Train logistic classifier on train set."""
+    # train logistic classifier on train set
     scaler = StandardScaler()
     h_train_scaled = scaler.fit_transform(h_train)
     
@@ -122,12 +110,7 @@ def basin_direction_intervention(
     mu_hall: np.ndarray,
     alpha_values: np.ndarray
 ) -> np.ndarray:
-    """
-    Interpolate factual states toward hallucination centroid.
-    h_α = (1-α)h_fact + α·μ_hall for α ∈ [0,1]
-    
-    Returns: (n_samples, n_alphas, hidden_dim)
-    """
+    # interpolate factual states toward hallucination centroid
     n_samples = h_factual.shape[0]
     n_alphas = len(alpha_values)
     hidden_dim = h_factual.shape[1]
@@ -146,11 +129,7 @@ def random_direction_intervention(
     n_random: int = 10,
     alpha: float = 1.0
 ) -> np.ndarray:
-    """
-    Move factual states in random directions with same magnitude as basin direction.
-    
-    Returns: (n_samples, n_random, hidden_dim)
-    """
+    # move factual states in random directions with same magnitude as basin direction
     np.random.seed(SEED)
     n_samples = h_factual.shape[0]
     hidden_dim = h_factual.shape[1]
@@ -178,11 +157,7 @@ def orthogonal_direction_intervention(
     mu_hall: np.ndarray,
     alpha: float = 1.0
 ) -> np.ndarray:
-    """
-    Move factual states orthogonal to basin direction.
-    
-    Returns: (n_samples, hidden_dim)
-    """
+    # move factual states orthogonal to basin direction
     np.random.seed(SEED)
     n_samples = h_factual.shape[0]
     hidden_dim = h_factual.shape[1]
@@ -207,16 +182,7 @@ def orthogonal_direction_intervention(
 
 
 def evaluate_intervention(h_intervened: np.ndarray, clf: LogisticRegression) -> np.ndarray:
-    """
-    Evaluate P(hallucination | h) for intervened states.
-    
-    Args:
-        h_intervened: Shape (n_samples,) or (n_samples, n_variants, hidden_dim)
-        clf: Trained classifier
-    
-    Returns:
-        P(hall): Shape (n_samples,) or (n_samples, n_variants)
-    """
+    # evaluate p(hallucination | h) for intervened states
     original_shape = h_intervened.shape
     
     # Flatten to 2D if needed
@@ -240,10 +206,7 @@ def evaluate_intervention(h_intervened: np.ndarray, clf: LogisticRegression) -> 
 
 
 def get_models_with_basin(threshold: float = DETECTION_AUROC_THRESHOLD) -> List[str]:
-    """
-    Scan `HIDDEN_STATES_DIR` for files ending with `_halueval_qa_hidden_states.npz` and
-    return a list of model names for which a basin is detected (AUROC >= threshold).
-    """
+    # scan hidden_states_dir for files and return model names with basin detected
     models = []
     pattern = "*_halueval_qa_hidden_states.npz"
     files = list(HIDDEN_STATES_DIR.glob(pattern))
@@ -282,7 +245,7 @@ def get_models_with_basin(threshold: float = DETECTION_AUROC_THRESHOLD) -> List[
 
 
 def run_causality_controls(model_name: str, dataset_name: str) -> Dict:
-    """Run all 3 control conditions for a model-dataset pair."""
+    # run all 3 control conditions for a model-dataset pair
     
     print(f"\n{'='*60}")
     print(f"Causality Controls: {model_name} on {dataset_name}")
@@ -503,7 +466,7 @@ def run_causality_controls(model_name: str, dataset_name: str) -> Dict:
 
 
 def create_control_comparison_figure(all_results: List[Dict], output_file: Path):
-    """Create 2-panel figure comparing controls across models."""
+    # create 2-panel figure comparing controls across models
     
     fig, axes = plt.subplots(1, 2, figsize=(10, 4))
     
@@ -587,7 +550,7 @@ def create_control_comparison_figure(all_results: List[Dict], output_file: Path)
 
 
 def main():
-    """Run causality controls for all configurations."""
+    # run causality controls for all configurations
     
     print("="*60)
     print("RIGOROUS CAUSALITY CONTROLS")

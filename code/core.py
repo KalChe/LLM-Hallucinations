@@ -1,12 +1,4 @@
-"""
-Core Experimental Framework for ICML Submission
-
-Experiments A1-A4: Required for acceptance
-- A1: Basin existence verification across all models/datasets
-- A2: PCA failure analysis (geometry > PCA on MuSiQue)
-- A3: Detection vs baselines (entropy, probing, semantic entropy)
-- A4: Architecture dependence validation (spectral radius, contraction)
-"""
+# core experimental framework for icml submission
 
 import json
 import numpy as np
@@ -26,7 +18,7 @@ RESULTS_FILE = WORKSPACE / "code" / "real_experiment_results.json"
 
 
 def load_hidden_states_npz(file_path: Path) -> dict:
-    """Load hidden states from NPZ file with layer_0, layer_1, ... format."""
+    # load hidden states from npz file with layer_0, layer_1, ... format
     data = np.load(file_path, allow_pickle=True)
     
     # Find all layer keys
@@ -53,16 +45,7 @@ def load_hidden_states_npz(file_path: Path) -> dict:
 # ==============================================================================
 
 def compute_fisher_ratio(hidden_states: np.ndarray, labels: np.ndarray) -> float:
-    """
-    Compute Fisher ratio: between-class variance / within-class variance.
-    
-    Args:
-        hidden_states: (n_samples, hidden_dim)
-        labels: (n_samples,) binary labels
-    
-    Returns:
-        fisher_ratio: float
-    """
+    # compute fisher ratio: between-class variance / within-class variance
     factual = hidden_states[labels == 0]
     hallucinated = hidden_states[labels == 1]
     
@@ -80,15 +63,7 @@ def compute_fisher_ratio(hidden_states: np.ndarray, labels: np.ndarray) -> float
 
 
 def compute_flow_magnitude(hidden_states: np.ndarray) -> float:
-    """
-    Compute flow magnitude: mean L2 norm of layer-to-layer differences.
-    
-    Args:
-        hidden_states: (n_samples, n_layers, hidden_dim)
-    
-    Returns:
-        flow_magnitude: float
-    """
+    # compute flow magnitude: mean l2 norm of layer-to-layer differences
     # Compute differences between consecutive layers
     dh = hidden_states[:, 1:, :] - hidden_states[:, :-1, :]
     
@@ -99,24 +74,7 @@ def compute_flow_magnitude(hidden_states: np.ndarray) -> float:
 
 
 def verify_basin_existence(model: str, dataset: str) -> Dict:
-    """
-    A1: Verify basin existence for one model/dataset combination.
-    
-    Criteria:
-    - Fisher ratio > 0.4 at any layer (strong separation)
-    - Flow magnitude < 0.1 (context-insensitive)
-    - AUROC > 0.9 (reliable detection)
-    
-    Returns:
-        {
-            'basin_exists': bool,
-            'fisher_ratio_peak': float,
-            'fisher_ratio_layer': int,
-            'flow_magnitude': float,
-            'auroc': float,
-            'layer_wise_fisher': List[float]
-        }
-    """
+    # a1: verify basin existence for one model/dataset combination
     states_file = HIDDEN_STATES_DIR / f"{model}_{dataset}_hidden_states.npz"
     if not states_file.exists():
         return None
@@ -166,7 +124,7 @@ def verify_basin_existence(model: str, dataset: str) -> Dict:
 
 
 def run_a1_all_models_datasets() -> Dict:
-    """Run A1 for all model/dataset combinations."""
+    # run a1 for all model/dataset combinations
     models = ['llama-3.2-1b', 'llama-3.2-3b', 'qwen-2.5-1.5b', 'mistral-7b', 'gemma-2-2b']
     datasets = ['halueval_qa', 'halueval_summarization', 'musique', 'truthfulqa']
     
@@ -198,20 +156,7 @@ def run_a1_all_models_datasets() -> Dict:
 # ==============================================================================
 
 def compare_pca_vs_geometry(model: str, dataset: str) -> Dict:
-    """
-    A2: Show PCA fails where geometry succeeds.
-    
-    Compare:
-    - PCA-based detection (linear projection)
-    - Geometry-based detection (basin distance)
-    
-    Returns:
-        {
-            'pca_auroc': float,
-            'geometry_auroc': float,
-            'delta_auroc': float,  # geometry - PCA (positive = geometry wins)
-        }
-    """
+    # a2: show pca fails where geometry succeeds
     states_file = HIDDEN_STATES_DIR / f"{model}_{dataset}_hidden_states.npz"
     if not states_file.exists():
         return None
@@ -248,7 +193,7 @@ def compare_pca_vs_geometry(model: str, dataset: str) -> Dict:
 
 
 def run_a2_pca_failure() -> Dict:
-    """Run A2 for datasets where PCA fails."""
+    # run a2 for datasets where pca fails
     # HaluEval: PCA should work (strong linear separability)
     # MuSiQue/TruthfulQA: PCA should fail (no linear separability, but geometry works)
     
@@ -284,38 +229,20 @@ def run_a2_pca_failure() -> Dict:
 # ==============================================================================
 
 def compute_output_entropy(outputs: List[str]) -> np.ndarray:
-    """Compute token-level entropy for each output."""
+    # compute token-level entropy for each output
     # Placeholder: requires tokenization
     # In practice, would compute H = -Σ p(token) log p(token)
     return np.random.rand(len(outputs))  # MOCK for now
 
 
 def compute_semantic_entropy(outputs: List[str]) -> np.ndarray:
-    """Compute semantic entropy using clustering of meanings."""
+    # compute semantic entropy using clustering of meanings
     # Placeholder: requires semantic similarity
     return np.random.rand(len(outputs))  # MOCK for now
 
 
 def compare_detection_methods(model: str, dataset: str) -> Dict:
-    """
-    A3: Compare detection methods.
-    
-    Baselines:
-    - Output entropy
-    - Semantic entropy
-    - Linear probing (supervised)
-    
-    Our method:
-    - Geometric basin distance (unsupervised)
-    
-    Returns:
-        {
-            'output_entropy_auroc': float,
-            'semantic_entropy_auroc': float,
-            'linear_probe_auroc': float,
-            'geometry_auroc': float,
-        }
-    """
+    # a3: compare detection methods
     states_file = HIDDEN_STATES_DIR / f"{model}_{dataset}_hidden_states.npz"
     if not states_file.exists():
         return None
@@ -358,7 +285,7 @@ def compare_detection_methods(model: str, dataset: str) -> Dict:
 
 
 def run_a3_baselines() -> Dict:
-    """Run A3 for basin-forming and non-basin models."""
+    # run a3 for basin-forming and non-basin models
     test_cases = [
         ('llama-3.2-1b', 'halueval_qa'),
         ('mistral-7b', 'halueval_qa'),
@@ -392,14 +319,7 @@ def run_a3_baselines() -> Dict:
 # ==============================================================================
 
 def measure_spectral_radius(model: str, dataset: str, layer: int = 12) -> float:
-    """
-    A4: Measure spectral radius of Jacobian approximation.
-    
-    Approximation: ρ ≈ ||Δh|| / ||h - μ|| for samples near reference.
-    
-    Returns:
-        spectral_radius: float
-    """
+    # a4: measure spectral radius of jacobian approximation
     states_file = HIDDEN_STATES_DIR / f"{model}_{dataset}_hidden_states.npz"
     if not states_file.exists():
         return None
@@ -431,7 +351,7 @@ def measure_spectral_radius(model: str, dataset: str, layer: int = 12) -> float:
 
 
 def run_a4_architecture_dependence() -> Dict:
-    """Run A4 for all models."""
+    # run a4 for all models
     models = ['llama-3.2-1b', 'llama-3.2-3b', 'qwen-2.5-1.5b', 'mistral-7b', 'gemma-2-2b']
     dataset = 'halueval_qa'
     

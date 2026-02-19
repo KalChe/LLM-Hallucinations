@@ -1,8 +1,4 @@
-"""
-Configuration for all experiments.
-
-Centralized configuration management for reproducibility.
-"""
+# configuration for all experiments
 
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional
@@ -11,7 +7,7 @@ from pathlib import Path
 
 @dataclass
 class ModelConfig:
-    """Configuration for a specific model."""
+    # configuration for a specific model
     name: str
     hf_name: str
     num_layers: int
@@ -65,7 +61,7 @@ MODELS: Dict[str, ModelConfig] = {
 
 @dataclass
 class ExperimentConfig:
-    """Global experiment configuration."""
+    # global experiment configuration
     
     # Paths
     base_dir: Path = field(default_factory=lambda: Path(__file__).parent.parent.resolve())
@@ -95,7 +91,7 @@ class ExperimentConfig:
 
 @dataclass
 class FigureConfig:
-    """Publication figure settings."""
+    # publication figure settings
     
     # Dimensions (single column: 3.5", double column: 7")
     single_col_width: float = 3.5

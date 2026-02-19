@@ -1,8 +1,4 @@
-"""
-Generate causality intervention visualizations showing factual → basin transformation.
-Creates figures demonstrating that pushing factual representations toward basin
-increases hallucination probability.
-"""
+# generate causality intervention visualizations showing factual to basin transformation
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -22,11 +18,7 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 # We'll process per-model JSON files produced by `causality_rigorous_controls.py`.
 
 def visualize_causality_intervention(model_dataset):
-    """Create causality visualization using per-model JSON results.
-
-    Prefers in-model dose-response values if present; otherwise falls back
-    to offline intervention curve saved in the JSON.
-    """
+    # create causality visualization using per-model json results
     # model_dataset looks like 'llama-3.2-1b_halueval_qa'
     model_name, dataset_name = model_dataset.rsplit('_', 1)
     result_file = JSON_DIR / f"causality_controls_{model_name}_{dataset_name}.json"
@@ -82,7 +74,7 @@ def visualize_causality_intervention(model_dataset):
 
 
 def visualize_causality_3d_trajectory(model_dataset):
-    """Visualize the intervention trajectory in 3D PCA space and overlay in-model captures."""
+    # visualize the intervention trajectory in 3d pca space and overlay in-model captures
     filepath = HIDDEN_STATES_DIR / f"{model_dataset}_hidden_states.npz"
     if not filepath.exists():
         print(f"Skipping {model_dataset} 3D (file not found)")
@@ -220,7 +212,7 @@ def visualize_causality_3d_trajectory(model_dataset):
 
 
 def generate_all_causality_figures():
-    """Generate all causality visualization figures"""
+    # generate all causality visualization figures
     print("="*60)
     print("GENERATING CAUSALITY INTERVENTION FIGURES")
     print("="*60)

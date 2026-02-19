@@ -1,7 +1,4 @@
-"""
-Generate steering mechanism visualizations and comprehensive results tables.
-Shows before/after comparisons for all models and datasets.
-"""
+# generate steering mechanism visualizations and comprehensive results tables
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -30,8 +27,7 @@ with open(FAST_RESULTS, 'r') as f:
 
 
 def compute_steering_from_npz(npz_path, lambdas=None):
-    """Compute steering curve from a hidden-states NPZ using the same eval as experiments.
-    Returns an object matching 'experiment_4_steering'."""
+    # compute steering curve from a hidden-states npz using the same eval as experiments
     if lambdas is None:
         lambdas = [0, 0.1, 0.2, 0.3, 0.4, 0.5]
 
@@ -104,7 +100,7 @@ def compute_steering_from_npz(npz_path, lambdas=None):
 
 
 def generate_steering_comparison_figure(dataset=STEERING_DATASET):
-    """Create comprehensive steering comparison figure with all models"""
+    # create comprehensive steering comparison figure with all models
     fig = plt.figure(figsize=(18, 10))
     gs = GridSpec(2, 2, figure=fig, hspace=0.35, wspace=0.3)
     # Select all model keys for the requested dataset (case-insensitive).
@@ -317,7 +313,7 @@ def generate_steering_comparison_figure(dataset=STEERING_DATASET):
 
 
 def generate_latex_results_table():
-    """Generate LaTeX table with all experimental results"""
+    # generate latex table with all experimental results
     
     latex = r"""\begin{table*}[t]
 \centering
@@ -363,7 +359,7 @@ causality effects $>$ 20×, and steering reductions of 28-57\%.}
 
 
 def generate_full_dataset_comparison_table():
-    """Generate table comparing ALL datasets (with and without basins)"""
+    # generate table comparing all datasets (with and without basins)
     
     latex = r"""\begin{table*}[t]
 \centering
@@ -416,7 +412,7 @@ while summarization tasks show no basin structure (AUROC $\approx$ 0.50, random 
 
 
 def save_all_tables():
-    """Save all LaTeX tables"""
+    # save all latex tables
     print("="*60)
     print("GENERATING LATEX TABLES")
     print("="*60)
