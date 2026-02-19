@@ -546,7 +546,7 @@ def create_control_comparison_figure(all_results: List[Dict], output_file: Path)
     plt.savefig(output_file, dpi=300, bbox_inches='tight')
     plt.close()
     
-    print(f"\n✓ Figure saved: {output_file.name}")
+    print(f"\nFigure saved: {output_file.name}")
 
 
 def main():
@@ -560,7 +560,7 @@ def main():
     selected_models = get_models_with_basin()
 
     if not selected_models:
-        print("\n⚠️  No models with a detectable basin (AUROC >= {:.2f}) found in hidden states.".format(DETECTION_AUROC_THRESHOLD))
+        print("\nNo models with a detectable basin (AUROC >= {:.2f}) found in hidden states.".format(DETECTION_AUROC_THRESHOLD))
         return
 
     print(f"\nSelected models for HaluEval QA (AUROC >= {DETECTION_AUROC_THRESHOLD}):")
@@ -584,10 +584,10 @@ def main():
                 json.dump(results, f, indent=2)
 
         except FileNotFoundError as e:
-            print(f"\n⚠️  Skipping {model_name}/{dataset_name}: {e}")
+            print(f"\nSkipping {model_name}/{dataset_name}: {e}")
             continue
         except Exception as e:
-            print(f"\n❌ Error processing {model_name}/{dataset_name}: {e}")
+            print(f"\nError processing {model_name}/{dataset_name}: {e}")
             import traceback
             traceback.print_exc()
             continue
@@ -598,7 +598,7 @@ def main():
         with open(aggregate_file, 'w') as f:
             json.dump(all_results, f, indent=2)
         
-        print(f"\n✓ Aggregate results saved: {aggregate_file.name}")
+        print(f"\nAggregate results saved: {aggregate_file.name}")
         
         # Create comparison figure
         figure_file = OUTPUT_DIR / "causality_controls_comparison.png"
@@ -618,11 +618,11 @@ def main():
             orthog_fold = r['orthogonal_direction']['fold_increase']
             print(f"{model_short:<20} {dataset_short:<15} {basin_fold:>8.1f}× {random_fold:>8.1f}× {orthog_fold:>8.1f}×")
         
-        print(f"\n✓ Expected: Basin >> Random, Basin >> Orthogonal")
-        print(f"✓ Validates that DIRECTION (not distance) drives causality")
+        print(f"\nExpected: Basin >> Random, Basin >> Orthogonal")
+        print(f"Validates that DIRECTION (not distance) drives causality")
     
     else:
-        print("\n⚠️  No results generated")
+        print("\nNo results generated")
 
 
 if __name__ == "__main__":

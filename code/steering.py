@@ -422,14 +422,14 @@ def save_all_tables():
     file1 = TABLES_DIR / 'table_comprehensive_results.tex'
     with open(file1, 'w', encoding='utf-8') as f:
         f.write(table1)
-    print(f"✓ Saved: {file1.name}")
+    print(f"Saved: {file1.name}")
     
     # Full dataset comparison
     table2 = generate_full_dataset_comparison_table()
     file2 = TABLES_DIR / 'table_all_datasets_comparison.tex'
     with open(file2, 'w', encoding='utf-8') as f:
         f.write(table2)
-    print(f"✓ Saved: {file2.name}")
+    print(f"Saved: {file2.name}")
     
     print("="*60)
 
@@ -440,7 +440,7 @@ if __name__ == '__main__':
     fig = generate_steering_comparison_figure(STEERING_DATASET)
     output_file = OUTPUT_DIR / 'steering_comprehensive_results.png'
     fig.savefig(output_file, dpi=300, bbox_inches='tight')
-    print(f"✓ Saved: {output_file}")
+    print(f"Saved: {output_file}")
     plt.close(fig)
     
     # Generate tables

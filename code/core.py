@@ -40,10 +40,6 @@ def load_hidden_states_npz(file_path: Path) -> dict:
     }
 
 
-# ==============================================================================
-# A1: Basin Existence Verification
-# ==============================================================================
-
 def compute_fisher_ratio(hidden_states: np.ndarray, labels: np.ndarray) -> float:
     # compute fisher ratio: between-class variance / within-class variance
     factual = hidden_states[labels == 0]
@@ -150,11 +146,6 @@ def run_a1_all_models_datasets() -> Dict:
     
     return results
 
-
-# ==============================================================================
-# A2: PCA Failure Analysis
-# ==============================================================================
-
 def compare_pca_vs_geometry(model: str, dataset: str) -> Dict:
     # a2: show pca fails where geometry succeeds
     states_file = HIDDEN_STATES_DIR / f"{model}_{dataset}_hidden_states.npz"
@@ -222,11 +213,6 @@ def run_a2_pca_failure() -> Dict:
               f"{result['pca_auroc']:<10.3f} {result['geometry_auroc']:<10.3f} {delta_str:<10}")
     
     return results
-
-
-# ==============================================================================
-# A3: Detection vs Baselines
-# ==============================================================================
 
 def compute_output_entropy(outputs: List[str]) -> np.ndarray:
     # compute token-level entropy for each output
@@ -313,11 +299,6 @@ def run_a3_baselines() -> Dict:
     
     return results
 
-
-# ==============================================================================
-# A4: Architecture Dependence Validation
-# ==============================================================================
-
 def measure_spectral_radius(model: str, dataset: str, layer: int = 12) -> float:
     # a4: measure spectral radius of jacobian approximation
     states_file = HIDDEN_STATES_DIR / f"{model}_{dataset}_hidden_states.npz"
@@ -378,11 +359,6 @@ def run_a4_architecture_dependence() -> Dict:
     
     return results
 
-
-# ==============================================================================
-# Main
-# ==============================================================================
-
 if __name__ == "__main__":
     print("Running Core Experiments (A1-A4)\n")
     
@@ -407,10 +383,4 @@ if __name__ == "__main__":
         json.dump(a4_results, f, indent=2)
     
     print("\n" + "="*80)
-    print("[DONE] All core experiments (A1-A4) complete!")
-    print("="*80)
-    print("\nResults saved to:")
-    print("  - a1_basin_verification.json")
-    print("  - a2_pca_failure.json")
-    print("  - a3_detection_comparison.json")
-    print("  - a4_architecture_spectral.json")
+    print("All experiments complete!")

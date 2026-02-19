@@ -195,7 +195,7 @@ def generate_all_evolution_figures():
             safe_name = filename.replace('_hidden_states.npz', '')
             output_file = OUTPUT_DIR / f'layer_evolution_2d_{safe_name}.png'
             fig_2d.savefig(output_file, dpi=300, bbox_inches='tight')
-            print(f"  ✓ Saved 2D: {output_file.name}")
+            print(f"  Saved 2D: {output_file.name}")
             plt.close(fig_2d)
         
         # 3D evolution
@@ -204,7 +204,7 @@ def generate_all_evolution_figures():
             safe_name = filename.replace('_hidden_states.npz', '')
             output_file = OUTPUT_DIR / f'layer_evolution_3d_{safe_name}.png'
             fig_3d.savefig(output_file, dpi=300, bbox_inches='tight')
-            print(f"  ✓ Saved 3D: {output_file.name}")
+            print(f"  Saved 3D: {output_file.name}")
             plt.close(fig_3d)
     
     print("\n" + "="*60)

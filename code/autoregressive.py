@@ -182,7 +182,7 @@ def run_autoregressive_experiments(
     with open(metadata_file, 'w') as f:
         json.dump(metadata, f, indent=2)
     
-    print(f"✓ Experiment complete!")
+    print(f"Experiment complete!")
     print(f"  Hidden states: {output_file}")
     print(f"  Metadata: {metadata_file}")
 

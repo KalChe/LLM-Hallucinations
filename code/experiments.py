@@ -230,7 +230,7 @@ def generate_all_causality_figures():
         if fig1:
             output_file = OUTPUT_DIR / f'causality_intervention_{model_dataset}.png'
             fig1.savefig(output_file, dpi=300, bbox_inches='tight')
-            print(f"  ✓ Saved curve: {output_file.name}")
+            print(f"  Saved curve: {output_file.name}")
             plt.close(fig1)
 
         # 3D trajectory with in-model overlays
@@ -238,7 +238,7 @@ def generate_all_causality_figures():
         if fig2:
             output_file = OUTPUT_DIR / f'causality_intervention_{model_dataset}.png'
             fig2.savefig(output_file, dpi=300, bbox_inches='tight')
-            print(f"  ✓ Saved 3D (saved to same intervention filename): {output_file.name}")
+            print(f"  Saved 3D (saved to same intervention filename): {output_file.name}")
             plt.close(fig2)
     
     print("\n" + "="*60)

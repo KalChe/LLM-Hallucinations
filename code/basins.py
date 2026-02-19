@@ -304,7 +304,7 @@ def run_multi_basin_analysis(model_name: str) -> Dict:
         visualize_voronoi_cells(
             h_hall, mu_ref, mu_misconceptions, cluster_labels, model_name, viz_file
         )
-        print(f"\n✓ Visualization saved: {viz_file.name}")
+        print(f"\nVisualization saved: {viz_file.name}")
         
         # Package results
         results = {
@@ -322,10 +322,10 @@ def run_multi_basin_analysis(model_name: str) -> Dict:
         return results
         
     except FileNotFoundError as e:
-        print(f"\n⚠️  Skipping: {e}")
+        print(f"\nSkipping: {e}")
         return None
     except Exception as e:
-        print(f"\n❌ Error: {e}")
+        print(f"\nError: {e}")
         import traceback
         traceback.print_exc()
         return None
@@ -362,7 +362,7 @@ def create_summary_figure(all_results: List[Dict], output_file: Path):
     plt.savefig(output_file, dpi=300, bbox_inches='tight')
     plt.close()
     
-    print(f"\n✓ Summary figure saved: {output_file.name}")
+    print(f"\nSummary figure saved: {output_file.name}")
 
 
 def main():
@@ -390,7 +390,7 @@ def main():
         with open(aggregate_file, 'w') as f:
             json.dump(all_results, f, indent=2)
         
-        print(f"\n✓ Aggregate results: {aggregate_file.name}")
+        print(f"\nAggregate results: {aggregate_file.name}")
         
         # Summary figure
         summary_file = OUTPUT_DIR / "multi_basin_summary.pdf"
@@ -408,12 +408,12 @@ def main():
         
         avg_k = np.mean([r['optimal_k'] for r in all_results])
         avg_f1 = np.mean([r['evaluation']['f1'] for r in all_results])
-        print(f"\n✓ Average K: {avg_k:.1f} misconception basins")
-        print(f"✓ Average F1: {avg_f1:.3f}")
-        print(f"✓ Validates Theorem 5.X: Multiple competing attractors exist")
+        print(f"\nAverage K: {avg_k:.1f} misconception basins")
+        print(f"Average F1: {avg_f1:.3f}")
+        print(f"Validates Theorem 5.X: Multiple competing attractors exist")
     
     else:
-        print("\n⚠️  No results generated")
+        print("\nNo results generated")
 
 
 if __name__ == "__main__":
