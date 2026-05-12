@@ -427,7 +427,7 @@ def generate_steering_comparison_figure(dataset=STEERING_DATASET):
     cmap = plt.get_cmap('tab20')
     colors = [cmap(x) for x in np.linspace(0, 1, max(1, len(model_datasets)))]
     
-    # Plot 1: Steering curves for all models
+    # Steering curves for all models
     ax1 = fig.add_subplot(gs[0, :])
     for idx, md in enumerate(model_datasets):
         if md in critical_results:
@@ -454,7 +454,7 @@ def generate_steering_comparison_figure(dataset=STEERING_DATASET):
     ax1.legend(fontsize=10, ncol=2)
     ax1.set_xlim(-0.05, 0.55)
     
-    # Plot 2: Quality vs Reduction tradeoff
+    # Quality vs Reduction tradeoff
     ax2 = fig.add_subplot(gs[1, 0])
     for idx, md in enumerate(model_datasets):
         if md in critical_results:
@@ -485,7 +485,7 @@ def generate_steering_comparison_figure(dataset=STEERING_DATASET):
     cbar = plt.colorbar(scatter, ax=ax2)
     cbar.set_label('λ', fontsize=11)
     
-    # Plot 3: Bar chart of optimal results
+    # Bar chart of optimal results
     ax3 = fig.add_subplot(gs[1, 1])
     optimal_reductions = [
         (critical_results[md]['experiment_4_steering']['reduction_percentage'] if md in critical_results
@@ -523,131 +523,6 @@ def generate_steering_comparison_figure(dataset=STEERING_DATASET):
     
     return fig
 
-
-def generate_latex_results_table():
-    # generate latex table with all experimental results
-    _ensure_results_loaded()
-    
-    latex = r"""\begin{table*}[t]
-\centering
-\caption{\textbf{Comprehensive Experimental Results Across All Models and Datasets.} 
-Detection performance (AUROC), causality effects (fold increase in P(hallucination) when pushing factual → basin), 
-and steering efficacy (reduction in hallucinations). All models show strong basins with AUROC $>$ 0.98, 
-causality effects $>$ 20×, and steering reductions of 28-57\%.}
-\label{tab:comprehensive_results}
-\small
-\begin{tabular}{@{}llcccccc@{}}
-\toprule
-\textbf{Model} & \textbf{Dataset} & \textbf{AUROC} & \textbf{Fisher} & \textbf{Basin Sep.} & \textbf{Causality} & \textbf{Steering} & \textbf{Quality} \\
- & & \textbf{(Maha)} & \textbf{Ratio} & \textbf{d} & \textbf{(Fold ×)} & \textbf{Red. (\%)} & \textbf{Metric} \\
-\midrule
-"""
-    
-    for md in critical_results.keys():
-        model, dataset = md.split('_', 1)
-        model_clean = model.replace('llama-', 'L').replace('qwen-', 'Q')
-        dataset_clean = dataset.replace('halueval_', '').replace('_', ' ').title()
-        
-        detection = critical_results[md]['experiment_1_detection']
-        causality = critical_results[md]['experiment_3_causality']
-        steering = critical_results[md]['experiment_4_steering']
-        
-        auroc = detection['auroc_mahalanobis']
-        fisher = detection['fisher_ratio']
-        basin_sep = detection['basin_separation']
-        fold = causality['fold_increase']
-        reduction = steering['reduction_percentage']
-        quality = steering['quality_metric']
-        
-        latex += f"{model_clean} & {dataset_clean} & {auroc:.4f} & {fisher:.4f} & {basin_sep:.2f} & {fold:.1f} & {reduction:.1f} & {quality:.3f} \\\\\n"
-    
-    latex += r"""\midrule
-\textbf{Mean} & \textbf{High-Basin} & \textbf{0.989} & \textbf{0.399} & \textbf{11.43} & \textbf{202.9} & \textbf{38.4} & \textbf{0.265} \\
-\bottomrule
-\end{tabular}
-\end{table*}
-"""
-    
-    return latex
-
-
-def generate_full_dataset_comparison_table():
-    # generate table comparing all datasets (with and without basins)
-    _ensure_results_loaded()
-    
-    latex = r"""\begin{table*}[t]
-\centering
-\caption{\textbf{Detection Performance Across All 21 Model-Dataset Combinations.} 
-Shows task-dependent basin structure: factoid/QA tasks consistently form strong basins (AUROC $>$ 0.70), 
-while summarization tasks show no basin structure (AUROC $\approx$ 0.50, random chance).}
-\label{tab:all_datasets}
-\small
-\begin{tabular}{@{}llcccl@{}}
-\toprule
-\textbf{Model} & \textbf{Dataset} & \textbf{AUROC} & \textbf{Basin} & \textbf{n Samples} & \textbf{Task Type} \\
- & & \textbf{(Mahalanobis)} & \textbf{Present?} & & \\
-\midrule
-"""
-    
-    # Sort by AUROC descending
-    fast_list = [(k, v) for k, v in fast_results.items()]
-    fast_list.sort(key=lambda x: x[1]['auroc_mahalanobis'], reverse=True)
-    
-    for key, result in fast_list:
-        model = result['model']
-        dataset = result['dataset']
-        model_clean = model.replace('llama-', 'L').replace('gemma-', 'G').replace('qwen-', 'Q').replace('mistral-', 'M')
-        dataset_clean = dataset.replace('halueval_', '').replace('_', ' ').title()
-        
-        auroc = result['auroc_mahalanobis']
-        has_basin = '\\checkmark' if result['has_basin'] else '\\texttimes'
-        n_samples = result['n_samples']
-        
-        # Determine task type
-        if 'qa' in dataset or 'musique' in dataset or 'fever' in dataset:
-            task_type = 'Factoid/QA'
-        elif 'summarization' in dataset or 'dialogue' in dataset:
-            task_type = 'Generation'
-        else:
-            task_type = 'Misconception'
-        
-        latex += f"{model_clean} & {dataset_clean} & {auroc:.4f} & {has_basin} & {n_samples:,} & {task_type} \\\\\n"
-    
-    latex += r"""\midrule
-\multicolumn{6}{l}{\textbf{Summary Statistics:}} \\
-\multicolumn{6}{l}{With Basins (n=12): Mean AUROC = 0.883 $\pm$ 0.124, Range = [0.713, 1.000]} \\
-\multicolumn{6}{l}{Without Basins (n=9): Mean AUROC = 0.479 $\pm$ 0.095, Range = [0.328, 0.611]} \\
-\bottomrule
-\end{tabular}
-\end{table*}
-"""
-    
-    return latex
-
-
-def save_all_tables():
-    # save all latex tables
-    print("="*60)
-    print("GENERATING LATEX TABLES")
-    print("="*60)
-    
-    # Comprehensive results table
-    table1 = generate_latex_results_table()
-    file1 = TABLES_DIR / 'table_comprehensive_results.tex'
-    with open(file1, 'w', encoding='utf-8') as f:
-        f.write(table1)
-    print(f"Saved: {file1.name}")
-    
-    # Full dataset comparison
-    table2 = generate_full_dataset_comparison_table()
-    file2 = TABLES_DIR / 'table_all_datasets_comparison.tex'
-    with open(file2, 'w', encoding='utf-8') as f:
-        f.write(table2)
-    print(f"Saved: {file2.name}")
-    
-    print("="*60)
-
-
 if __name__ == '__main__':
     # Generate steering figure
     print(f"Generating steering comparison figure for dataset: {STEERING_DATASET}...")
@@ -656,8 +531,3 @@ if __name__ == '__main__':
     fig.savefig(output_file, dpi=300, bbox_inches='tight')
     print(f"Saved: {output_file}")
     plt.close(fig)
-    
-    # Generate tables
-    save_all_tables()
-    
-    print("\nAll steering visualizations and tables generated!")

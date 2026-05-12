@@ -47,7 +47,7 @@ def visualize_causality_intervention(model_dataset):
     # Create figure with 2 subplots (no title per user request)
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
 
-    # Plot 1: Intervention curve (probabilities)
+    # Intervention curve (probabilities)
     ax1.plot(alphas, probs, 'o-', linewidth=2, markersize=8, color='purple')
     # baseline as first point if available
     if probs:
@@ -61,7 +61,7 @@ def visualize_causality_intervention(model_dataset):
     ax1.set_xlim(-0.05, 1.05)
     ax1.set_ylim(-0.05, 1.05)
 
-    # Plot 2: Fold increase
+    # Fold increase
     ax2.plot(alphas, fold_increases, 's-', linewidth=2, markersize=8, color='red')
     ax2.axhline(y=1, color='black', linestyle='--', alpha=0.5, label='No Change')
     if fold_increases:
