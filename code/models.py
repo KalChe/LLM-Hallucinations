@@ -1,5 +1,3 @@
-# model utilities for extracting hidden states and applying steering
-
 import torch
 import torch.nn.functional as F
 import numpy as np
@@ -16,7 +14,7 @@ except ImportError:
 
 
 def get_device() -> torch.device:
-    # get the best available device
+    # Get the best available device (CUDA > MPS > CPU)
     if torch.cuda.is_available():
         return torch.device("cuda")
     elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
@@ -29,7 +27,7 @@ def load_model_and_tokenizer(
     device: Optional[torch.device] = None,
     dtype: torch.dtype = torch.float16,
 ) -> Tuple[AutoModelForCausalLM, AutoTokenizer]:
-    # load a model and tokenizer
+    # Load a model and tokenizer from HuggingFace
     if device is None:
         device = get_device()
     
@@ -70,7 +68,8 @@ def extract_hidden_states(
     position: str = 'last',
     verbose: bool = True,
 ) -> Dict[int, np.ndarray]:
-    # extract hidden states from specified layers
+    # Extract hidden states from specified layers
+    # Returns dict mapping layer_idx -> np.ndarray (n_samples, hidden_dim)
     device = next(model.parameters()).device
     model.eval()
     
@@ -138,35 +137,32 @@ def extract_all_layer_states(
     max_length: int = 256,
     verbose: bool = True,
 ) -> Dict[int, np.ndarray]:
-    # extract hidden states from all layers
+    # Extract hidden states from ALL layers
     num_layers = model.config.num_hidden_layers + 1  # +1 for embedding layer
     layers = list(range(num_layers))
     return extract_hidden_states(model, tokenizer, texts, layers, batch_size, max_length, 'last', verbose)
 
 
 class SteeringHook:
-    # hook for applying steering vectors during generation
+    # Apply steering vectors during generation: h_steered = h + λ(Φ(x)) · v_steer
     
     def __init__(
         self,
         steering_vectors: Dict[int, np.ndarray],
         strength: float = 1.0,
         adaptive_fn: Optional[Callable] = None,
-        capture_hidden: bool = False,
     ):
-        # initialize steering hook with vectors and strength
+        # Initialize steering hook with vectors and strength configuration
         self.steering_vectors = {
             k: torch.tensor(v, dtype=torch.float16) 
             for k, v in steering_vectors.items()
         }
         self.strength = strength
         self.adaptive_fn = adaptive_fn
-        self.capture_hidden = capture_hidden
         self.hooks = []
-        self.captured = {}
     
     def _create_hook(self, layer_idx: int):
-        # create a forward hook for a specific layer
+        # Create a forward hook for a specific layer
         steering_vec = self.steering_vectors[layer_idx]
         
         def hook(module, input, output):
@@ -186,14 +182,6 @@ class SteeringHook:
             
             # Apply steering
             steered = hidden + self.strength * multiplier * vec
-
-            # Optionally capture the steered hidden states for analysis
-            if self.capture_hidden:
-                try:
-                    arr = steered.detach().cpu().numpy()
-                except Exception:
-                    arr = steered.cpu().numpy()
-                self.captured.setdefault(layer_idx, []).append(arr)
             
             if isinstance(output, tuple):
                 return (steered,) + output[1:]
@@ -202,7 +190,7 @@ class SteeringHook:
         return hook
     
     def attach(self, model: AutoModelForCausalLM):
-        # attach steering hooks to model
+        # Attach steering hooks to model
         for layer_idx, vec in self.steering_vectors.items():
             if hasattr(model, 'model') and hasattr(model.model, 'layers'):
                 # Llama-style architecture
@@ -218,7 +206,7 @@ class SteeringHook:
                     self.hooks.append(hook)
     
     def detach(self):
-        # remove all hooks
+        # Remove all hooks
         for hook in self.hooks:
             hook.remove()
         self.hooks = []
@@ -235,15 +223,12 @@ def generate_with_steering(
     top_p: float = 0.9,
     batch_size: int = 1,
     verbose: bool = True,
-    capture_hidden: bool = False,
-    return_captured: bool = False,
-) -> List[str] | Tuple[List[str], Dict[int, List[np.ndarray]]]:
-    # generate text with steering applied
-    hook = SteeringHook(steering_vectors, strength, adaptive_fn=None, capture_hidden=capture_hidden)
+) -> List[str]:
+    # Generate text with steering applied
+    hook = SteeringHook(steering_vectors, strength)
     hook.attach(model)
     
     generations = []
-    captured = None
     
     iterator = range(0, len(prompts), batch_size)
     if verbose:
@@ -275,12 +260,8 @@ def generate_with_steering(
                     text = tokenizer.decode(output, skip_special_tokens=True)
                     generations.append(text)
     finally:
-        if capture_hidden:
-            captured = hook.captured
         hook.detach()
     
-    if return_captured:
-        return generations, captured
     return generations
 
 
@@ -291,7 +272,7 @@ def compute_perplexity(
     batch_size: int = 4,
     max_length: int = 256,
 ) -> List[float]:
-    # compute perplexity for each text
+    # Compute perplexity for each text
     device = next(model.parameters()).device
     model.eval()
     
@@ -332,7 +313,8 @@ def get_attention_entropy(
     batch_size: int = 4,
     max_length: int = 256,
 ) -> Dict[int, np.ndarray]:
-    # compute attention entropy at each layer
+    # Compute attention entropy at each layer
+    # High entropy = uniform attention = potential basin trapping
     device = next(model.parameters()).device
     model.eval()
     

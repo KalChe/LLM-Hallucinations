@@ -1,5 +1,3 @@
-# multi-basin clustering for empirical validation of theorem 5.x
-
 import numpy as np
 import torch
 from pathlib import Path
@@ -92,8 +90,13 @@ def find_optimal_k(h_hall: np.ndarray, k_values: List[int]) -> Tuple[int, Dict]:
     return optimal_k, scores
 
 
+def _valid_k_values(n_hall_samples: int, k_values: List[int]) -> List[int]:
+    # silhouette/calinski require at least 2 clusters and k < n_samples
+    return [k for k in k_values if 2 <= k < n_hall_samples]
+
+
 def multi_basin_detection(h_train: np.ndarray, labels_train: np.ndarray, k: int) -> Tuple:
-    # algorithm 2: multi-basin detection
+    # Multi-basin detection.
     # Step 1: Compute reference centroid μ_0
     mu_ref = h_train[labels_train == 0].mean(axis=0)
     
@@ -270,12 +273,20 @@ def run_multi_basin_analysis(model_name: str) -> Dict:
         h_hall_train = h_train[labels_train == 1]
         print(f"\nHallucination samples: {len(h_hall_train)}")
         
-        optimal_k, clustering_scores = find_optimal_k(h_hall_train, K_VALUES)
+        valid_k_values = _valid_k_values(len(h_hall_train), K_VALUES)
+        if not valid_k_values:
+            print(
+                f"\nSkipping: insufficient hallucination samples ({len(h_hall_train)}) "
+                f"for K choices {K_VALUES}"
+            )
+            return None
+
+        optimal_k, clustering_scores = find_optimal_k(h_hall_train, valid_k_values)
         print(f"\nOptimal K: {optimal_k}")
-        silhouette_str = ', '.join([f'{k}: {clustering_scores[k]["silhouette"]:.3f}' for k in K_VALUES])
+        silhouette_str = ', '.join([f'{k}: {clustering_scores[k]["silhouette"]:.3f}' for k in valid_k_values])
         print(f"Silhouette scores: {silhouette_str}")
         
-        # Run Algorithm 2 with optimal K
+        # Run multi-basin detection with the selected K.
         mu_ref, mu_misconceptions, cluster_labels, h_hall = multi_basin_detection(
             h_train, labels_train, optimal_k
         )
@@ -314,7 +325,7 @@ def run_multi_basin_analysis(model_name: str) -> Dict:
             'optimal_k': optimal_k,
             'clustering_scores': {k: {'silhouette': clustering_scores[k]['silhouette'],
                                       'calinski_harabasz': clustering_scores[k]['calinski_harabasz']}
-                                  for k in K_VALUES},
+                                  for k in valid_k_values},
             'cluster_sizes': [int((cluster_labels == i).sum()) for i in range(optimal_k)],
             'evaluation': eval_results
         }
@@ -369,7 +380,7 @@ def main():
     # run multi-basin analysis for all models
     
     print("="*60)
-    print("MULTI-BASIN CLUSTERING (Theorem 5.X Validation)")
+    print("MULTI-BASIN CLUSTERING")
     print("="*60)
     
     all_results = []
@@ -410,7 +421,7 @@ def main():
         avg_f1 = np.mean([r['evaluation']['f1'] for r in all_results])
         print(f"\nAverage K: {avg_k:.1f} misconception basins")
         print(f"Average F1: {avg_f1:.3f}")
-        print(f"Validates Theorem 5.X: Multiple competing attractors exist")
+        print("Multiple competing attractors detected in the latent space")
     
     else:
         print("\nNo results generated")

@@ -1,5 +1,3 @@
-# geometric metrics for hallucination basin analysis
-
 import numpy as np
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
@@ -11,7 +9,7 @@ from scipy.linalg import svdvals
 
 @dataclass
 class BasinGeometry:
-    # computed basin geometry for a single layer
+    # Computed basin geometry for a single layer
     layer_idx: int
     mu_factual: np.ndarray
     mu_hallucinated: np.ndarray
@@ -32,7 +30,9 @@ class BasinGeometry:
 
 
 def compute_effective_dimensionality(X: np.ndarray, method: str = 'participation_ratio') -> float:
-    # compute effective dimensionality of data distribution
+    # Compute effective dimensionality of data distribution
+    # method: 'participation_ratio' or 'eigenvalue_decay'
+    # Returns effective dimensionality estimate
     if X.shape[0] < 2:
         return 0.0
     
@@ -67,7 +67,9 @@ def compute_effective_dimensionality(X: np.ndarray, method: str = 'participation
 
 
 def compute_effective_rank(X: np.ndarray, epsilon: float = 1e-10) -> float:
-    # compute effective rank via entropy of singular values (manifold collapse metric)
+    # Compute effective rank via entropy of singular values (manifold collapse metric)
+    # Formula: r_eff = exp(H(λ)), where H(λ) = -Σ p_i log(p_i), p_i = λ_i / Σλ_j
+    # Low effective rank indicates manifold collapse (Type 2: Manifold Trapping)
     if X.shape[0] < 2:
         return 1.0
     
@@ -109,7 +111,9 @@ def compute_layer_flow_magnitude(
     hidden_states_current: np.ndarray,
     hidden_states_previous: np.ndarray
 ) -> float:
-    # compute flow magnitude between consecutive layers (reasoning collapse metric)
+    # Compute flow magnitude between consecutive layers (reasoning collapse metric)
+    # Formula: σ_flow = mean(||h^(l) - h^(l-1)||_2)
+    # Low flow magnitude in early layers indicates Flow Stagnation (Type 3)
     if hidden_states_current.shape != hidden_states_previous.shape:
         return 0.0
     
@@ -131,7 +135,9 @@ def compute_unified_risk_score(
     basin_threshold: float = 0.5,
     flow_scale: float = 1.0
 ) -> float:
-    # compute unified risk score combining all three collapse types
+    # Compute unified risk score combining all three collapse types
+    # Formula: Risk = max(d_basin/threshold, 1 - r_eff/D, exp(-σ_flow/scale))
+    # Detects basin attraction, manifold trapping, and flow stagnation
     # Type 1: Basin Attraction (inverted - closer = higher risk)
     basin_risk = 1.0 - min(distance_to_basin / basin_threshold, 1.0)
     
@@ -151,7 +157,9 @@ def compute_fisher_ratio(
     factual_states: np.ndarray,
     hallucinated_states: np.ndarray,
 ) -> float:
-    # compute fisher discriminant ratio
+    # Compute Fisher discriminant ratio
+    # Fisher ratio = ||mu_f - mu_h||^2 / (trace(Sigma_f) + trace(Sigma_h))
+    # High values indicate good linear separability
     if factual_states.shape[0] < 2 or hallucinated_states.shape[0] < 2:
         return 0.0
     
@@ -175,7 +183,9 @@ def compute_mahalanobis_distance(
     hallucinated_states: np.ndarray,
     apply_correction: bool = True,
 ) -> Tuple[float, float, float, float]:
-    # compute regularized mahalanobis distance between class centers
+    # Compute regularized Mahalanobis distance between class centers
+    # Uses Ledoit-Wolf shrinkage for robust covariance estimation
+    # Returns: delta_sq, delta_corrected, risk_prob, shrinkage
     mu_f = factual_states.mean(axis=0)
     mu_h = hallucinated_states.mean(axis=0)
     delta_mu = mu_f - mu_h
@@ -219,7 +229,8 @@ def compute_basin_geometry(
     labels: np.ndarray,
     verbose: bool = True,
 ) -> Dict[int, BasinGeometry]:
-    # compute full basin geometry for each layer
+    # Compute full basin geometry for each layer
+    # Returns dict mapping layer_idx -> BasinGeometry
     results = {}
     
     factual_mask = labels == 0
@@ -301,7 +312,9 @@ def compute_geometric_features(
     basin_geometry: Dict[int, BasinGeometry],
     aggregate: str = 'mean',
 ) -> np.ndarray:
-    # compute geometric feature vectors for detection
+    # Compute geometric feature vectors for detection
+    # Aggregates: distance to basin, fisher ratio, flow magnitude
+    # Returns feature array (n_samples, n_features)
     layers = sorted(hidden_states.keys())
     n_samples = hidden_states[layers[0]].shape[0]
     
@@ -355,7 +368,9 @@ def compute_spectral_radius(
     epsilon: float = 1e-4,
     n_samples: int = 100,
 ) -> float:
-    # estimate spectral radius of jacobian at reference state
+    # Estimate spectral radius of Jacobian at reference state
+    # Uses power iteration on finite-difference Jacobian approximation
+    # Validates Proposition 5.1: ρ(J_ℓ(μ^(ℓ))) < 1 for stability
     import torch
     
     d = len(reference_state)
@@ -381,14 +396,15 @@ def compute_spectral_radius(
 
 
 class GeometricRiskScorer:
-    # compute geometric risk scores for hallucination detection
+    # Compute geometric risk scores for hallucination detection
+    # Combines multiple geometric metrics into a single risk score
     
     def __init__(self, basin_geometry: Dict[int, BasinGeometry]):
         self.basin_geometry = basin_geometry
         self.weights = None
         
     def fit(self, features: np.ndarray, labels: np.ndarray):
-        # learn optimal weights via logistic regression
+        # Learn optimal weights via logistic regression
         from sklearn.linear_model import LogisticRegression
         
         clf = LogisticRegression(max_iter=1000, random_state=42)
@@ -401,14 +417,14 @@ class GeometricRiskScorer:
         return self
     
     def predict_risk(self, features: np.ndarray) -> np.ndarray:
-        # predict hallucination risk probability
+        # Predict hallucination risk probability
         if self.weights is None:
             raise ValueError("Must call fit() first")
         
         return self.clf.predict_proba(features)[:, 1]
     
     def get_decision_boundary(self) -> Dict:
-        # return decision boundary parameters
+        # Return decision boundary parameters
         return {
             'weights': self.weights.tolist(),
             'bias': float(self.bias),

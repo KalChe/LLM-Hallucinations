@@ -1,15 +1,18 @@
-# generate causality intervention visualizations showing factual to basin transformation
-
 import numpy as np
 import matplotlib.pyplot as plt
 import json
 from pathlib import Path
 from sklearn.decomposition import PCA
 
+try:
+    from .metrics_utils import load_autoregressive_last_token_hidden_states
+except Exception:
+    from metrics_utils import load_autoregressive_last_token_hidden_states
+
 # Use relative paths
 BASE_DIR = Path(__file__).parent.parent.resolve()
 JSON_DIR = BASE_DIR / "code" / "json_results"
-HIDDEN_STATES_DIR = BASE_DIR / "figs" / "hidden_states"
+HIDDEN_STATES_DIR = BASE_DIR / "figs" / "hidden_states_autoregressive"
 OUTPUT_DIR = BASE_DIR / "figs"
 
 JSON_DIR.mkdir(parents=True, exist_ok=True)
@@ -74,20 +77,16 @@ def visualize_causality_intervention(model_dataset):
 
 
 def visualize_causality_3d_trajectory(model_dataset):
-    # visualize the intervention trajectory in 3d pca space and overlay in-model captures
-    filepath = HIDDEN_STATES_DIR / f"{model_dataset}_hidden_states.npz"
+    # visualize intervention trajectory in 3D PCA from autoregressive hidden-state artifacts
+    filepath = HIDDEN_STATES_DIR / f"{model_dataset}_autoregressive.npz"
     if not filepath.exists():
         print(f"Skipping {model_dataset} 3D (file not found)")
         return None
-    
-    data = np.load(filepath)
-    labels = data['labels']
-    layer_keys = sorted([k for k in data.keys() if k.startswith('layer_')],
-                       key=lambda x: int(x.split('_')[1]))
-    
-    # Use middle layer
+
+    layers, labels = load_autoregressive_last_token_hidden_states(filepath)
+    layer_keys = sorted(list(layers.keys()))
     middle_layer = layer_keys[len(layer_keys) // 2]
-    h = data[middle_layer]
+    h = layers[middle_layer]
     
     # Split data
     np.random.seed(42)
@@ -159,53 +158,6 @@ def visualize_causality_3d_trajectory(model_dataset):
     ax.view_init(elev=20, azim=45)
     
     # Overlay in-model captured hidden states if present
-    model_name, dataset_name = model_dataset.rsplit('_', 1)
-    in_model_dir = OUTPUT_DIR / 'in_model_captured'
-    # Basin alphas file
-    basin_file = in_model_dir / f"{model_name}_{dataset_name}_inmodel_basin_alphas.npz"
-    if basin_file.exists():
-        try:
-            arr = np.load(str(basin_file))
-            # arr contains keys like 'alpha_0.0', 'alpha_0.1', ...
-            alpha_keys = sorted([k for k in arr.files if k.startswith('alpha_')], key=lambda s: float(s.split('_')[1]))
-            means = []
-            for k in alpha_keys:
-                h = arr[k]
-                if h is None:
-                    continue
-                mean_h = h.mean(axis=0, keepdims=True)
-                means.append(mean_h)
-            if means:
-                means = np.vstack(means)
-                means_3d = pca.transform(means)
-                ax.plot(means_3d[:, 0], means_3d[:, 1], means_3d[:, 2], color='purple', linestyle='-', linewidth=2.5, marker='D', markersize=6, label='in-model basin (means)')
-        except Exception:
-            pass
-
-    # Random captures
-    rand_file = in_model_dir / f"{model_name}_{dataset_name}_inmodel_random.npz"
-    if rand_file.exists():
-        try:
-            darr = np.load(str(rand_file))
-            if 'hidden' in darr.files:
-                hrand = darr['hidden']
-                hrand_3d = pca.transform(hrand)
-                ax.scatter(hrand_3d[:, 0], hrand_3d[:, 1], hrand_3d[:, 2], c='green', alpha=0.35, s=20, label='in-model random')
-        except Exception:
-            pass
-
-    # Orthogonal captures
-    ortho_file = in_model_dir / f"{model_name}_{dataset_name}_inmodel_orthogonal.npz"
-    if ortho_file.exists():
-        try:
-            darr = np.load(str(ortho_file))
-            if 'hidden' in darr.files:
-                hortho = darr['hidden']
-                hortho_3d = pca.transform(hortho)
-                ax.scatter(hortho_3d[:, 0], hortho_3d[:, 1], hortho_3d[:, 2], c='orange', alpha=0.6, s=40, label='in-model orthogonal')
-        except Exception:
-            pass
-
     ax.legend(fontsize=10, loc='upper right')
     plt.tight_layout()
     return fig
@@ -217,28 +169,21 @@ def generate_all_causality_figures():
     print("GENERATING CAUSALITY INTERVENTION FIGURES")
     print("="*60)
     
-    # Iterate over hidden-state files for halueval_qa and process each model
-    pattern = '*_halueval_qa_hidden_states.npz'
-    files = sorted(HIDDEN_STATES_DIR.glob(pattern))
-    for f in files:
-        base = f.name.replace('_hidden_states.npz', '')
-        model_dataset = base
-        print(f"\nProcessing: {model_dataset}")
+    target_model_datasets = [
+        "llama-3.2-3b_halueval_qa",
+        "mistral-7b-v0.3_halueval_qa",
+        "llama-3.1-8b_halueval_qa",
+    ]
 
-        # Intervention curve (prefer in-model values saved in per-model JSON)
-        fig1 = visualize_causality_intervention(model_dataset)
-        if fig1:
-            output_file = OUTPUT_DIR / f'causality_intervention_{model_dataset}.png'
-            fig1.savefig(output_file, dpi=300, bbox_inches='tight')
-            print(f"  Saved curve: {output_file.name}")
-            plt.close(fig1)
+    for model_dataset in target_model_datasets:
+        print(f"\nProcessing: {model_dataset}")
 
         # 3D trajectory with in-model overlays
         fig2 = visualize_causality_3d_trajectory(model_dataset)
         if fig2:
-            output_file = OUTPUT_DIR / f'causality_intervention_{model_dataset}.png'
+            output_file = OUTPUT_DIR / f'causality_3d_trajectory_{model_dataset}.png'
             fig2.savefig(output_file, dpi=300, bbox_inches='tight')
-            print(f"  Saved 3D (saved to same intervention filename): {output_file.name}")
+            print(f"  Saved 3D trajectory: {output_file.name}")
             plt.close(fig2)
     
     print("\n" + "="*60)

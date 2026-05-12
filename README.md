@@ -10,13 +10,12 @@ This repository contains experimental code for LLM Hallucination controls. Pleas
 
 ```
 .
-├── code/                          # Main source code
+├── code/                         # Main source code
 │   ├── __init__.py               # Package initialization
 │   ├── config.py                 # Configuration and hyperparameters
 │   ├── data.py                   # Data loading and preprocessing
 │   ├── models.py                 # Model loading utilities
 │   ├── geometry.py               # Geometric calculations (basins, distances)
-│   ├── core.py                   # Core experimental functionality
 │   ├── causality.py              # Causal intervention experiments
 │   ├── basins.py                 # Multi-basin clustering and detection
 │   ├── experiments.py            # Basin example figure generation
@@ -75,13 +74,6 @@ Computes geometric properties of hidden state representations:
 - Mahalanobis distance calculations
 - Variance ratio analysis for task complexity
 - Reference state construction from uninformative contexts
-
-### `core.py`
-Main experimental pipeline:
-- Hidden state extraction from models
-- Train/test split management
-- Classification-based hallucination detection
-- AUROC and confidence interval computation
 
 ### `causality.py`
 Causal intervention experiments:
@@ -142,11 +134,7 @@ python -c "from basins import *; generate_multi_basin_voronoi()"
 
 ### Full Experimental Pipeline
 
-```bash
-# Extract hidden states and compute basins for all models/datasets
-python -c "from core import *; run_all_experiments()"
-
-```
+The legacy full pipeline script has been archived to `old/core.py` and is not part of the active `code/` module set.
 
 ## Reproducibility
 

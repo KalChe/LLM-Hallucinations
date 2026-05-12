@@ -1,5 +1,3 @@
-# data loading utilities for hallucination detection experiments
-
 import json
 from pathlib import Path
 from typing import List, Tuple, Dict, Optional
@@ -9,7 +7,7 @@ from dataclasses import dataclass
 
 @dataclass
 class HallucinationSample:
-    # a single sample with factual and hallucinated response
+    # A single sample with factual and hallucinated response
     prompt: str
     factual_response: str
     hallucinated_response: str
@@ -17,14 +15,12 @@ class HallucinationSample:
 
 
 def load_halueval_qa(
-    data_path: Path = None,
+    data_path: Path = Path("c:/Users/cheru/Downloads/llm-hallucinations/HaluEval/data/qa_data.json"),
     n_samples: Optional[int] = None,
     seed: int = 42,
 ) -> Tuple[List[str], np.ndarray, List[str]]:
-    # load halueval qa data
-    if data_path is None:
-        data_path = Path(__file__).parent.parent.parent / "HaluEval" / "data" / "qa_data.json"
-    
+    # Load HaluEval QA data
+    # Returns: texts (full texts), labels (0=factual, 1=hallucinated), prompts
     samples = []
     with open(data_path, 'r', encoding='utf-8') as f:
         for line in f:
@@ -73,14 +69,11 @@ def load_halueval_qa(
 
 
 def load_halueval_dialogue(
-    data_path: Path = None,
+    data_path: Path = Path("c:/Users/cheru/Downloads/llm-hallucinations/HaluEval/data/dialogue_data.json"),
     n_samples: Optional[int] = None,
     seed: int = 42,
 ) -> Tuple[List[str], np.ndarray, List[str]]:
-    # load halueval dialogue data
-    if data_path is None:
-        data_path = Path(__file__).parent.parent.parent / "HaluEval" / "data" / "dialogue_data.json"
-    
+    # Load HaluEval dialogue data
     samples = []
     with open(data_path, 'r', encoding='utf-8') as f:
         for line in f:
@@ -128,14 +121,11 @@ def load_halueval_dialogue(
 
 
 def load_halueval_summarization(
-    data_path: Path = None,
+    data_path: Path = Path("c:/Users/cheru/Downloads/llm-hallucinations/HaluEval/data/summarization_data.json"),
     n_samples: Optional[int] = None,
     seed: int = 42,
 ) -> Tuple[List[str], np.ndarray, List[str]]:
-    # load halueval summarization data
-    if data_path is None:
-        data_path = Path(__file__).parent.parent.parent / "HaluEval" / "data" / "summarization_data.json"
-    
+    # Load HaluEval summarization data
     samples = []
     with open(data_path, 'r', encoding='utf-8') as f:
         for line in f:
@@ -183,14 +173,11 @@ def load_halueval_summarization(
 
 
 def load_truthfulqa(
-    data_path: Path = None,
+    data_path: Path = Path("c:/Users/cheru/Downloads/llm-hallucinations/TruthfulQA/TruthfulQA.csv"),
     n_samples: Optional[int] = None,
     seed: int = 42,
 ) -> Tuple[List[str], np.ndarray, List[str]]:
-    # load truthfulqa data
-    if data_path is None:
-        data_path = Path(__file__).parent.parent.parent / "TruthfulQA" / "TruthfulQA.csv"
-    
+    # Load TruthfulQA data
     import csv
     
     prompts = []
@@ -243,141 +230,13 @@ def load_truthfulqa(
     return texts, np.array(labels), prompts_out
 
 
-def load_halludial(
-    data_path: Path = None,
-    n_samples: Optional[int] = None,
-    seed: int = 42,
-) -> Tuple[List[str], np.ndarray, List[str]]:
-    # load halludial dialogue hallucination data
-    if data_path is None:
-        data_path = Path(__file__).parent.parent.parent / "HalluDial"
-    
-    texts = []
-    labels = []
-    prompts = []
-    
-    # Try to load from actual dataset files first
-    spontaneous_file = data_path / "data" / "spontaneous" / "spontaneous_train.json"
-    induced_file = data_path / "data" / "induced" / "induced_train.json"
-    
-    # Also try meta-evaluation results
-    detect_file = data_path / "meta-evaluation_result" / "Llama-2-13b-chat-hf_detect.json"
-    
-    loaded = False
-    
-    # Try spontaneous/induced data
-    for data_file in [spontaneous_file, induced_file]:
-        if data_file.exists():
-            try:
-                with open(data_file, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                
-                print(f"      Loaded {len(data)} samples from {data_file.name}")
-                
-                for item in data:
-                    if 'response' in item and 'label' in item:
-                        response_text = item['response']
-                        is_hallucinated = (item['label'] == 1 or item['label'] == 'hallucinated')
-                        
-                        texts.append(response_text)
-                        labels.append(1 if is_hallucinated else 0)
-                        
-                        prompt = item.get('dialogue_history', item.get('context', ''))
-                        if isinstance(prompt, str) and len(prompt) > 200:
-                            prompt = prompt[:200] + '...'
-                        prompts.append(prompt)
-                
-                loaded = True
-                break
-            except Exception as e:
-                continue
-    
-    # Try meta-evaluation results if dataset not found
-    if not loaded and detect_file.exists():
-        try:
-            with open(detect_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            
-            print(f"      Loaded {len(data)} samples from meta-evaluation results")
-            
-            # This file only has hallucinated samples, so we need to create balanced data
-            for item in data:
-                if 'response' in item:
-                    response_text = item['response']
-                    # All in this file are hallucinated
-                    texts.append(response_text)
-                    labels.append(1)
-                    
-                    prompt = item.get('dialogue_history', '')
-                    if isinstance(prompt, str) and len(prompt) > 200:
-                        prompt = prompt[:200] + '...'
-                    prompts.append(prompt)
-            
-            # Also add the knowledge as non-hallucinated samples for balance
-            for item in data:
-                if 'knowledge' in item:
-                    knowledge_text = item['knowledge']
-                    texts.append(knowledge_text)
-                    labels.append(0)  # Knowledge is factual
-                    
-                    prompt = item.get('dialogue_history', '')
-                    if isinstance(prompt, str) and len(prompt) > 200:
-                        prompt = prompt[:200] + '...'
-                    prompts.append(prompt)
-            
-            loaded = True
-            
-        except Exception as e:
-            print(f"      Failed to load meta-evaluation: {e}")
-    
-    # If nothing worked, create synthetic balanced data
-    if not loaded or len(texts) == 0:
-        print(f"      WARNING: HalluDial not found at {data_path}")
-        print(f"      Download from: https://huggingface.co/datasets/FlagEval/HalluDial")
-        print(f"      Creating synthetic samples for testing")
-        
-        # Create balanced synthetic data
-        for i in range(100):
-            if i < 50:
-                # Factual samples
-                texts.append(f"Factual dialogue response {i}: This is based on known information.")
-                labels.append(0)
-            else:
-                # Hallucinated samples
-                texts.append(f"Hallucinated dialogue response {i}: This contains made-up information.")
-                labels.append(1)
-            prompts.append(f"Dialogue context {i}")
-    
-    print(f"      Total samples: {len(texts)} ({sum(labels)} hallucinated, {len(labels)-sum(labels)} factual)")
-    
-    texts = np.array(texts)
-    labels = np.array(labels)
-    prompts = np.array(prompts)
-    
-    np.random.seed(seed)
-    factual_idx = np.where(labels == 0)[0]
-    hall_idx = np.where(labels == 1)[0]
-    
-    if n_samples:
-        n_per_class = n_samples // 2
-        factual_idx = np.random.choice(factual_idx, min(n_per_class, len(factual_idx)), replace=False)
-        hall_idx = np.random.choice(hall_idx, min(n_per_class, len(hall_idx)), replace=False)
-    
-    selected_idx = np.concatenate([factual_idx, hall_idx])
-    np.random.shuffle(selected_idx)
-    
-    return texts[selected_idx].tolist(), labels[selected_idx], prompts[selected_idx].tolist()
-
-
 def load_musique(
-    data_dir: Path = None,
+    data_dir: Path = Path("c:/Users/cheru/Downloads/llm-hallucinations/musique_data/data"),
     n_samples: Optional[int] = None,
     seed: int = 42,
 ) -> Tuple[List[str], np.ndarray, List[str]]:
-    # load musique multi-hop qa data
-    if data_dir is None:
-        data_dir = Path(__file__).parent.parent.parent / "musique_data" / "data"
-    
+    # Load MuSiQue multi-hop QA data
+    # Creates hallucinated responses by providing wrong answers from other questions
     # Find available data files
     data_files = list(data_dir.glob("*.json")) + list(data_dir.glob("*.jsonl"))
     
@@ -461,14 +320,12 @@ def load_musique(
 
 
 def load_halludial(
-    data_path: Path = None,
+    data_path: Path = Path("c:/Users/cheru/Downloads/llm-hallucinations/HalluDial_data"),
     n_samples: Optional[int] = None,
     seed: int = 42,
 ) -> Tuple[List[str], np.ndarray, List[str]]:
-    # load halludial dataset (conversational hallucination)
-    if data_path is None:
-        data_path = Path(__file__).parent.parent.parent / "HalluDial_data"
-    
+    # Load HalluDial dataset (conversational hallucination)
+    # Contains multi-turn dialogues with hallucinated responses
     import zipfile
     import os
     
@@ -595,12 +452,10 @@ def load_dataset(
     dataset_name: str,
     n_samples: Optional[int] = None,
     seed: int = 42,
-    data_dir: Path = None,
+    data_dir: Path = Path("c:/Users/cheru/Downloads/llm-hallucinations"),
 ) -> Tuple[List[str], np.ndarray, List[str]]:
-    # unified dataset loading interface
-    if data_dir is None:
-        data_dir = Path(__file__).parent.parent.parent
-    
+    # Unified dataset loading interface
+    # Supports: halueval_qa, halueval_dialogue, halueval_summarization, musique, truthfulqa, halludial
     loaders = {
         'halueval_qa': lambda: load_halueval_qa(
             data_dir / "HaluEval/data/qa_data.json", n_samples, seed
@@ -635,7 +490,8 @@ def train_test_split_data(
     test_size: float = 0.3,
     seed: int = 42,
 ) -> Tuple[List[str], List[str], np.ndarray, np.ndarray, List[str], List[str]]:
-    # split data into train and test sets, stratified by label
+    # Split data into train and test sets, stratified by label
+    # Returns: train_texts, test_texts, train_labels, test_labels, train_prompts, test_prompts
     np.random.seed(seed)
     
     n = len(texts)

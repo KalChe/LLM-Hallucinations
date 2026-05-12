@@ -1,5 +1,3 @@
-# generate layer-wise pca evolution figures showing how basins form over time
-
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
@@ -7,22 +5,43 @@ from pathlib import Path
 from sklearn.decomposition import PCA
 from mpl_toolkits.mplot3d import Axes3D
 
+try:
+    from .metrics_utils import load_autoregressive_last_token_hidden_states
+except Exception:
+    from metrics_utils import load_autoregressive_last_token_hidden_states
+
 # Use relative paths
 BASE_DIR = Path(__file__).parent.parent.resolve()
-HIDDEN_STATES_DIR = BASE_DIR / "figs" / "hidden_states"
+HIDDEN_STATES_DIR = BASE_DIR / "figs" / "hidden_states_autoregressive"
 OUTPUT_DIR = BASE_DIR / "figs"
 SEED = 42
 
 # Select representative examples
 EXAMPLES = [
-    ('llama-3.2-1b_halueval_qa_hidden_states.npz', 'Llama-1B QA (Strong Basin)'),
-    ('llama-3.2-1b_halueval_summarization_hidden_states.npz', 'Llama-1B Summ (No Basin)'),
-    ('qwen-2.5-1.5b_halueval_qa_hidden_states.npz', 'Qwen-1.5B QA (Strong Basin)'),
-    ('gemma-2-2b_halueval_summarization_hidden_states.npz', 'Gemma-2B Summ (No Basin)'),
+    ('llama-3.2-1b_halueval_qa_autoregressive.npz', 'Llama-1B QA (autoregressive)'),
+    ('llama-3.2-3b_halueval_qa_autoregressive.npz', 'Llama-3B QA (autoregressive)'),
+    ('mistral-7b-v0.3_halueval_qa_autoregressive.npz', 'Mistral-7B QA (autoregressive)'),
+    ('llama-3.1-8b_halueval_qa_autoregressive.npz', 'Llama-8B QA (autoregressive)'),
 ]
 
 
-def visualize_layer_evolution_2d(filename, title):
+def _load_layer_states(filepath: Path):
+    # Supports both teacher-forced (layer_* arrays) and autoregressive object NPZ formats.
+    data = np.load(filepath, allow_pickle=True)
+    if any(k.startswith("layer_") for k in data.keys()):
+        labels = data["labels"]
+        layer_dict = {
+            int(k.split("_")[1]): data[k]
+            for k in data.keys()
+            if k.startswith("layer_")
+        }
+        return layer_dict, labels
+
+    layer_dict, labels = load_autoregressive_last_token_hidden_states(filepath)
+    return layer_dict, labels
+
+
+def visualize_layer_evolution_2d(filename, title, max_points=None):
     # generate 2d pca evolution across layers
     filepath = HIDDEN_STATES_DIR / filename
     if not filepath.exists():
@@ -30,8 +49,7 @@ def visualize_layer_evolution_2d(filename, title):
         return None
     
     print(f"Processing {filename} for 2D evolution...")
-    data = np.load(filepath)
-    labels = data['labels']
+    layer_dict, labels = _load_layer_states(filepath)
     
     # Arial font, no bold
     plt.rcParams.update({
@@ -45,26 +63,49 @@ def visualize_layer_evolution_2d(filename, title):
     })
     
     # Get all layers
-    layer_keys = sorted([k for k in data.keys() if k.startswith('layer_')],
-                       key=lambda x: int(x.split('_')[1]))
+    layer_keys = sorted(layer_dict.keys())
     
-    # Sample for visualization (too many points slow down plotting)
+    # Plot all points by default; optional cap exists for very large artifacts.
     np.random.seed(SEED)
-    n_samples = min(2000, len(labels))
-    sample_idx = np.random.choice(len(labels), n_samples, replace=False)
+    sample_idx = np.arange(len(labels))
+    if max_points is not None and len(labels) > int(max_points):
+        sample_idx = np.random.choice(len(labels), int(max_points), replace=False)
     labels_sampled = labels[sample_idx]
+
+    n_points = int(labels_sampled.shape[0])
+    if n_points < 40:
+        point_size = 36
+        point_alpha = 0.75
+    elif n_points < 100:
+        point_size = 24
+        point_alpha = 0.68
+    elif n_points < 400:
+        point_size = 16
+        point_alpha = 0.58
+    elif n_points < 2000:
+        point_size = 10
+        point_alpha = 0.45
+    else:
+        # Keep all points visible for full-dataset plots without oversaturating.
+        point_size = 8
+        point_alpha = 0.38
     
-    # Select layers to visualize (every 3rd layer to fit in grid)
-    viz_layers = layer_keys[::3]
+    # Select layer checkpoints: use all when small, otherwise evenly spaced.
+    if len(layer_keys) <= 6:
+        viz_layers = layer_keys
+    else:
+        step = max(1, len(layer_keys) // 6)
+        viz_layers = layer_keys[::step]
+        if viz_layers[-1] != layer_keys[-1]:
+            viz_layers.append(layer_keys[-1])
     n_viz = len(viz_layers)
     
     # Create figure
     fig, axes = plt.subplots(2, (n_viz + 1) // 2, figsize=(18, 8))
     axes = axes.flatten()
     
-    for idx, layer_key in enumerate(viz_layers):
-        layer_idx = int(layer_key.split('_')[1])
-        h = data[layer_key][sample_idx]
+    for idx, layer_idx in enumerate(viz_layers):
+        h = layer_dict[layer_idx][sample_idx]
         
         # PCA to 2D
         pca = PCA(n_components=2)
@@ -75,10 +116,26 @@ def visualize_layer_evolution_2d(filename, title):
         fact_mask = labels_sampled == 0
         hall_mask = labels_sampled == 1
         
-        ax.scatter(h_2d[fact_mask, 0], h_2d[fact_mask, 1], 
-                  c='blue', alpha=0.3, s=5, label='Factual')
-        ax.scatter(h_2d[hall_mask, 0], h_2d[hall_mask, 1], 
-                  c='red', alpha=0.3, s=5, label='Hallucination')
+        ax.scatter(
+            h_2d[fact_mask, 0],
+            h_2d[fact_mask, 1],
+            c='blue',
+            alpha=point_alpha,
+            s=point_size,
+            label='Factual',
+            edgecolors='none',
+            rasterized=True,
+        )
+        ax.scatter(
+            h_2d[hall_mask, 0],
+            h_2d[hall_mask, 1],
+            c='red',
+            alpha=point_alpha,
+            s=point_size,
+            label='Hallucination',
+            edgecolors='none',
+            rasterized=True,
+        )
         
         # Compute and plot centroids
         mu_fact = h_2d[fact_mask].mean(axis=0)
@@ -94,6 +151,7 @@ def visualize_layer_evolution_2d(filename, title):
         separation = np.linalg.norm(mu_fact - mu_hall)
         ax.set_xlabel('PC1', fontsize=8)
         ax.set_ylabel('PC2', fontsize=8)
+        ax.set_title(f'Layer {layer_idx} (N={n_points})', fontsize=8)
         ax.tick_params(labelsize=7)
         
         if idx == 0:
@@ -107,7 +165,7 @@ def visualize_layer_evolution_2d(filename, title):
     return fig
 
 
-def visualize_layer_evolution_3d(filename, title):
+def visualize_layer_evolution_3d(filename, title, max_points=None):
     # generate 3d pca evolution across layers
     filepath = HIDDEN_STATES_DIR / filename
     if not filepath.exists():
@@ -115,29 +173,45 @@ def visualize_layer_evolution_3d(filename, title):
         return None
     
     print(f"Processing {filename} for 3D evolution...")
-    data = np.load(filepath)
-    labels = data['labels']
+    layer_dict, labels = _load_layer_states(filepath)
     
     # Get all layers
-    layer_keys = sorted([k for k in data.keys() if k.startswith('layer_')],
-                       key=lambda x: int(x.split('_')[1]))
+    layer_keys = sorted(layer_dict.keys())
     
-    # Sample for visualization
+    # Plot all points by default; optional cap exists for very large artifacts.
     np.random.seed(SEED)
-    n_samples = min(1500, len(labels))
-    sample_idx = np.random.choice(len(labels), n_samples, replace=False)
+    sample_idx = np.arange(len(labels))
+    if max_points is not None and len(labels) > int(max_points):
+        sample_idx = np.random.choice(len(labels), int(max_points), replace=False)
     labels_sampled = labels[sample_idx]
+
+    n_points = int(labels_sampled.shape[0])
+    if n_points < 40:
+        point_size = 42
+        point_alpha = 0.78
+    elif n_points < 100:
+        point_size = 28
+        point_alpha = 0.70
+    elif n_points < 400:
+        point_size = 16
+        point_alpha = 0.60
+    elif n_points < 2000:
+        point_size = 10
+        point_alpha = 0.46
+    else:
+        point_size = 8
+        point_alpha = 0.40
     
-    # Select key layers (beginning, middle, end)
-    viz_indices = [0, len(layer_keys)//4, len(layer_keys)//2, 3*len(layer_keys)//4, -1]
+    # Select up to five evenly spaced checkpoint layers.
+    n_panels = min(5, len(layer_keys))
+    viz_indices = np.linspace(0, len(layer_keys) - 1, n_panels, dtype=int)
     viz_layers = [layer_keys[i] for i in viz_indices]
     
     # Create figure
     fig = plt.figure(figsize=(20, 4))
     
-    for idx, layer_key in enumerate(viz_layers):
-        layer_idx = int(layer_key.split('_')[1])
-        h = data[layer_key][sample_idx]
+    for idx, layer_idx in enumerate(viz_layers):
+        h = layer_dict[layer_idx][sample_idx]
         
         # PCA to 3D
         pca = PCA(n_components=3)
@@ -148,10 +222,26 @@ def visualize_layer_evolution_3d(filename, title):
         fact_mask = labels_sampled == 0
         hall_mask = labels_sampled == 1
         
-        ax.scatter(h_3d[fact_mask, 0], h_3d[fact_mask, 1], h_3d[fact_mask, 2],
-                  c='blue', alpha=0.3, s=5, label='Factual')
-        ax.scatter(h_3d[hall_mask, 0], h_3d[hall_mask, 1], h_3d[hall_mask, 2],
-                  c='red', alpha=0.3, s=5, label='Hallucination')
+        ax.scatter(
+            h_3d[fact_mask, 0],
+            h_3d[fact_mask, 1],
+            h_3d[fact_mask, 2],
+            c='blue',
+            alpha=point_alpha,
+            s=point_size,
+            label='Factual',
+            edgecolors='none',
+        )
+        ax.scatter(
+            h_3d[hall_mask, 0],
+            h_3d[hall_mask, 1],
+            h_3d[hall_mask, 2],
+            c='red',
+            alpha=point_alpha,
+            s=point_size,
+            label='Hallucination',
+            edgecolors='none',
+        )
         
         # Compute and plot centroids
         mu_fact = h_3d[fact_mask].mean(axis=0)
@@ -170,6 +260,7 @@ def visualize_layer_evolution_3d(filename, title):
         ax.set_xlabel('PC1', fontsize=8)
         ax.set_ylabel('PC2', fontsize=8)
         ax.set_zlabel('PC3', fontsize=8)
+        ax.set_title(f'Layer {layer_idx} (N={n_points})', fontsize=8)
         ax.tick_params(labelsize=6)
         ax.view_init(elev=20, azim=45)
         
@@ -190,18 +281,18 @@ def generate_all_evolution_figures():
         print(f"\nProcessing: {title}")
         
         # 2D evolution
-        fig_2d = visualize_layer_evolution_2d(filename, title)
+        fig_2d = visualize_layer_evolution_2d(filename, title, max_points=None)
         if fig_2d:
-            safe_name = filename.replace('_hidden_states.npz', '')
+            safe_name = filename.replace('_autoregressive.npz', '').replace('_hidden_states.npz', '')
             output_file = OUTPUT_DIR / f'layer_evolution_2d_{safe_name}.png'
             fig_2d.savefig(output_file, dpi=300, bbox_inches='tight')
             print(f"  Saved 2D: {output_file.name}")
             plt.close(fig_2d)
         
         # 3D evolution
-        fig_3d = visualize_layer_evolution_3d(filename, title)
+        fig_3d = visualize_layer_evolution_3d(filename, title, max_points=None)
         if fig_3d:
-            safe_name = filename.replace('_hidden_states.npz', '')
+            safe_name = filename.replace('_autoregressive.npz', '').replace('_hidden_states.npz', '')
             output_file = OUTPUT_DIR / f'layer_evolution_3d_{safe_name}.png'
             fig_3d.savefig(output_file, dpi=300, bbox_inches='tight')
             print(f"  Saved 3D: {output_file.name}")

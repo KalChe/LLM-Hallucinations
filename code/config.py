@@ -1,5 +1,3 @@
-# configuration for all experiments
-
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional
 from pathlib import Path
@@ -7,7 +5,7 @@ from pathlib import Path
 
 @dataclass
 class ModelConfig:
-    # configuration for a specific model
+    # Configuration for a specific model
     name: str
     hf_name: str
     num_layers: int
@@ -55,18 +53,25 @@ MODELS: Dict[str, ModelConfig] = {
         num_layers=32,
         hidden_dim=2560,
         steering_layers=[16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31],
-    )
+    ),
+    "mistral-7b": ModelConfig(
+        name="mistral-7b",
+        hf_name="mistralai/Mistral-7B-v0.1",
+        num_layers=32,
+        hidden_dim=4096,
+        steering_layers=[16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31],
+    ),
 }
 
 
 @dataclass
 class ExperimentConfig:
-    # global experiment configuration
+    # Global experiment configuration
     
     # Paths
-    base_dir: Path = field(default_factory=lambda: Path(__file__).parent.parent.resolve())
-    data_dir: Path = field(default_factory=lambda: Path(__file__).parent.parent.parent.resolve())
-    output_dir: Path = field(default_factory=lambda: Path(__file__).parent.parent.resolve() / "figs")
+    base_dir: Path = field(default_factory=lambda: Path("c:/Users/cheru/Downloads/llm-hallucinations/ICML (editing)"))
+    data_dir: Path = field(default_factory=lambda: Path("c:/Users/cheru/Downloads/llm-hallucinations"))
+    output_dir: Path = field(default_factory=lambda: Path("c:/Users/cheru/Downloads/llm-hallucinations/ICML (editing)/figs"))
     
     # Data settings
     n_samples: int = 5000  # Total samples (2500 factual + 2500 hallucinated)
@@ -91,7 +96,7 @@ class ExperimentConfig:
 
 @dataclass
 class FigureConfig:
-    # publication figure settings
+    # Publication figure settings
     
     # Dimensions (single column: 3.5", double column: 7")
     single_col_width: float = 3.5

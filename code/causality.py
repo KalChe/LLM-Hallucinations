@@ -1,5 +1,3 @@
-# rigorous causality controls for basin intervention
-
 import numpy as np
 import os
 import torch
@@ -278,7 +276,7 @@ def run_causality_controls(model_name: str, dataset_name: str) -> Dict:
     
     print(f"\nBaseline P(hall) on factual: {baseline_mean:.4f}")
     
-    # === CONTROL 1: Basin Direction (EXPECTED: 26-735× increase) ===
+    # === CONTROL 1: Basin Direction (EXPECTED: 26-735x increase) ===
     print(f"\n[1/3] Basin Direction Intervention...")
     h_basin = basin_direction_intervention(h_factual, mu_hall, ALPHA_VALUES)
     p_hall_basin = evaluate_intervention(h_basin, clf)  # (n_samples, n_alphas)
@@ -286,10 +284,10 @@ def run_causality_controls(model_name: str, dataset_name: str) -> Dict:
     basin_mean_by_alpha = p_hall_basin.mean(axis=0)
     basin_fold_increase = basin_mean_by_alpha / (baseline_mean + 1e-10)
     
-    print(f"  α=0.5: P(hall)={basin_mean_by_alpha[5]:.4f}, fold={basin_fold_increase[5]:.1f}×")
-    print(f"  α=1.0: P(hall)={basin_mean_by_alpha[-1]:.4f}, fold={basin_fold_increase[-1]:.1f}×")
+    print(f"  alpha=0.5: P(hall)={basin_mean_by_alpha[5]:.4f}, fold={basin_fold_increase[5]:.1f}x")
+    print(f"  alpha=1.0: P(hall)={basin_mean_by_alpha[-1]:.4f}, fold={basin_fold_increase[-1]:.1f}x")
     
-    # === CONTROL 2: Random Directions (EXPECTED: <5× increase) ===
+    # === CONTROL 2: Random Directions (EXPECTED: <5x increase) ===
     print(f"\n[2/3] Random Direction Baseline...")
     h_random = random_direction_intervention(h_factual, mu_hall, N_RANDOM_DIRECTIONS, alpha=1.0)
     p_hall_random = evaluate_intervention(h_random, clf)  # (n_samples, n_random)
@@ -299,9 +297,9 @@ def run_causality_controls(model_name: str, dataset_name: str) -> Dict:
     random_std = p_hall_random.std()
     
     print(f"  Mean P(hall): {random_mean:.4f} ± {random_std:.4f}")
-    print(f"  Fold increase: {random_fold:.1f}×")
+    print(f"  Fold increase: {random_fold:.1f}x")
     
-    # === CONTROL 3: Orthogonal Direction (EXPECTED: ~1× no change) ===
+    # === CONTROL 3: Orthogonal Direction (EXPECTED: ~1x no change) ===
     print(f"\n[3/3] Orthogonal Direction Control...")
     h_orthogonal = orthogonal_direction_intervention(h_factual, mu_hall, alpha=1.0)
     p_hall_orthogonal = evaluate_intervention(h_orthogonal, clf)
@@ -311,7 +309,7 @@ def run_causality_controls(model_name: str, dataset_name: str) -> Dict:
     orthogonal_std = p_hall_orthogonal.std()
     
     print(f"  Mean P(hall): {orthogonal_mean:.4f} ± {orthogonal_std:.4f}")
-    print(f"  Fold increase: {orthogonal_fold:.1f}×")
+    print(f"  Fold increase: {orthogonal_fold:.1f}x")
     
     # === OPTIONAL: True in-model interventions ===
     in_model_results = None
@@ -616,7 +614,7 @@ def main():
             basin_fold = r['basin_direction']['max_fold']
             random_fold = r['random_direction']['fold_increase']
             orthog_fold = r['orthogonal_direction']['fold_increase']
-            print(f"{model_short:<20} {dataset_short:<15} {basin_fold:>8.1f}× {random_fold:>8.1f}× {orthog_fold:>8.1f}×")
+            print(f"{model_short:<20} {dataset_short:<15} {basin_fold:>8.1f}x {random_fold:>8.1f}x {orthog_fold:>8.1f}x")
         
         print(f"\nExpected: Basin >> Random, Basin >> Orthogonal")
         print(f"Validates that DIRECTION (not distance) drives causality")
